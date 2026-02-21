@@ -17,19 +17,21 @@ function playNotificationSound() {
   const audioContext = new window.AudioContext();
   const oscillator = audioContext.createOscillator();
   const gainNode = audioContext.createGain();
+  const duration = 0.45;
 
   oscillator.type = 'sine';
-  oscillator.frequency.value = 880;
+  oscillator.frequency.setValueAtTime(880, audioContext.currentTime);
+  oscillator.frequency.exponentialRampToValueAtTime(660, audioContext.currentTime + duration);
 
   gainNode.gain.setValueAtTime(0.0001, audioContext.currentTime);
-  gainNode.gain.exponentialRampToValueAtTime(0.12, audioContext.currentTime + 0.01);
-  gainNode.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.22);
+  gainNode.gain.exponentialRampToValueAtTime(0.2, audioContext.currentTime + 0.03);
+  gainNode.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + duration);
 
   oscillator.connect(gainNode);
   gainNode.connect(audioContext.destination);
 
   oscillator.start();
-  oscillator.stop(audioContext.currentTime + 0.22);
+  oscillator.stop(audioContext.currentTime + duration);
 
   oscillator.onended = () => {
     audioContext.close().catch(() => undefined);
