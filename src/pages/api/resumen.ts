@@ -1,0 +1,37 @@
+import type { APIRoute } from 'astro';
+import { getTransacciones } from '../../lib/sheets';
+import { calcularResumen } from '../../lib/analytics';
+
+export const GET: APIRoute = async () => {
+  try {
+    const transacciones = await getTransacciones();
+    const resumen = calcularResumen(transacciones);
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        data: resumen,
+      }),
+      {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+  } catch (error) {
+    console.error('Error en API resumen:', error);
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: 'Error al calcular resumen',
+      }),
+      {
+        status: 500,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+  }
+};
