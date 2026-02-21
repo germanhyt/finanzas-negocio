@@ -35,8 +35,13 @@ html, body {
 
 /* Header */
 .dashboard-header {
-  text-align: center;
+  position: relative;
   margin-bottom: 2rem;
+  min-height: 70px;
+}
+
+.dashboard-header-main {
+  text-align: center;
 }
 
 .dashboard-header h1 {
@@ -218,6 +223,121 @@ html, body {
   font-size: 1.1rem;
 }
 
+/* Notifications */
+.notifications-bell {
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+
+.notifications-bell-button {
+  width: 44px;
+  height: 44px;
+  border-radius: 9999px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 1.15rem;
+  box-shadow: var(--shadow);
+}
+
+.notifications-dropdown {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  width: min(460px, 90vw);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  padding: 1rem;
+  z-index: 20;
+}
+
+.notifications-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.notifications-header h3 {
+  font-size: 1.1rem;
+}
+
+.sound-toggle {
+  border: 1px solid var(--border-color);
+  border-radius: 9999px;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.sound-toggle.enabled {
+  border-color: var(--accent-success);
+}
+
+.sound-toggle.disabled {
+  border-color: var(--accent-danger);
+}
+
+.notifications-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.notification-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 0.7rem 0.9rem;
+}
+
+.notification-main,
+.notification-sub {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.notification-main {
+  margin-bottom: 0.25rem;
+}
+
+.notification-meta {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.notification-sub {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.notification-amount {
+  font-weight: 700;
+}
+
+.notification-amount.ingreso {
+  color: var(--accent-success);
+}
+
+.notification-amount.egreso {
+  color: var(--accent-danger);
+}
+
+.notifications-empty {
+  color: var(--text-secondary);
+}
+
 .table-wrapper {
   overflow-x: auto;
 }
@@ -336,6 +456,16 @@ html, body {
 @media (max-width: 768px) {
   .dashboard {
     padding: 1rem;
+  }
+
+  .dashboard-header {
+    padding-top: 3rem;
+    min-height: unset;
+  }
+
+  .notifications-bell {
+    right: 50%;
+    transform: translateX(50%);
   }
 
   .dashboard-header h1 {

@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { Transaccion, ResumenFinanciero } from '../lib/types';
 import { StatsCards } from './StatsCards';
 import { BalanceChart } from './BalanceChart';
 import { TiposPieChart } from './TiposPieChart';
 import { TransaccionesTable } from './TransaccionesTable';
 import { DateFilter } from './DateFilter';
+import { LatestNotifications } from './LatestNotifications';
 
 interface DashboardProps {
   initialData?: {
@@ -25,14 +26,22 @@ export function Dashboard({ initialData }: DashboardProps) {
   const [fechaDesde, setFechaDesde] = useState<string>('');
   const [fechaHasta, setFechaHasta] = useState<string>('');
 
-  const fetchData = async () => {
-    setLoading(true);
-    setError(null);
+  const fetchData = useCallback(async (
+    options?: { silent?: boolean; desde?: string; hasta?: string }
+  ) => {
+    const silent = options?.silent ?? false;
+    const desde = options?.desde ?? fechaDesde;
+    const hasta = options?.hasta ?? fechaHasta;
+
+    if (!silent) {
+      setLoading(true);
+      setError(null);
+    }
 
     try {
       const params = new URLSearchParams();
-      if (fechaDesde) params.append('desde', fechaDesde);
-      if (fechaHasta) params.append('hasta', fechaHasta);
+      if (desde) params.append('desde', desde);
+      if (hasta) params.append('hasta', hasta);
 
       const url = `/api/transacciones${params.toString() ? `?${params}` : ''}`;
       const response = await fetch(url);
@@ -41,22 +50,36 @@ export function Dashboard({ initialData }: DashboardProps) {
       if (data.success) {
         setTransacciones(data.data.transacciones);
         setResumen(data.data.resumen);
-      } else {
+      } else if (!silent) {
         setError(data.error || 'Error al cargar datos');
       }
     } catch (err) {
-      setError('Error de conexión');
+      if (!silent) {
+        setError('Error de conexión');
+      }
       console.error(err);
     } finally {
-      setLoading(false);
+      if (!silent) {
+        setLoading(false);
+      }
     }
-  };
+  }, [fechaDesde, fechaHasta]);
 
   useEffect(() => {
     if (!initialData) {
       fetchData();
     }
-  }, []);
+  }, [initialData, fetchData]);
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        fetchData({ silent: true });
+      }
+    }, 8000);
+
+    return () => window.clearInterval(intervalId);
+  }, [fetchData]);
 
   const handleFilter = () => {
     fetchData();
@@ -65,7 +88,7 @@ export function Dashboard({ initialData }: DashboardProps) {
   const handleClearFilter = () => {
     setFechaDesde('');
     setFechaHasta('');
-    fetchData();
+    fetchData({ desde: '', hasta: '' });
   };
 
   if (loading) {
@@ -89,10 +112,14 @@ export function Dashboard({ initialData }: DashboardProps) {
   return (
     <div className="dashboard">
       <header className="dashboard-header">
-        <h1>Análisis del negocio</h1>
-        <p className="subtitle">
-          Control de ingresos y egresos en tiempo real
-        </p>
+        <div className="dashboard-header-main">
+          <h1>Análisis del negocio</h1>
+          <p className="subtitle">
+            Control de ingresos y egresos en tiempo real
+          </p>
+        </div>
+
+        <LatestNotifications transacciones={transacciones} />
       </header>
 
       <DateFilter
