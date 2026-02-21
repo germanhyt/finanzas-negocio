@@ -3,6 +3,7 @@ import type { Transaccion, ResumenFinanciero } from '../lib/types';
 import { StatsCards } from './StatsCards';
 import { BalanceChart } from './BalanceChart';
 import { TiposPieChart } from './TiposPieChart';
+import { TendenciaHoraChart } from './TendenciaHoraChart';
 import { TransaccionesTable } from './TransaccionesTable';
 import { DateFilter } from './DateFilter';
 import { LatestNotifications } from './LatestNotifications';
@@ -104,7 +105,7 @@ export function Dashboard({ initialData }: DashboardProps) {
     return (
       <div className="error-container">
         <p>Error: {error}</p>
-        <button onClick={fetchData}>Reintentar</button>
+        <button onClick={() => { void fetchData(); }}>Reintentar</button>
       </div>
     );
   }
@@ -113,7 +114,7 @@ export function Dashboard({ initialData }: DashboardProps) {
     <div className="dashboard">
       <header className="dashboard-header">
         <div className="dashboard-header-main">
-          <h1>Análisis del negocio</h1>
+          <h1>Análisis de negocio</h1>
           <p className="subtitle">
             Control de ingresos y egresos en tiempo real
           </p>
@@ -144,6 +145,11 @@ export function Dashboard({ initialData }: DashboardProps) {
             <div className="chart-container">
               <h3>Distribución por Tipo</h3>
               <TiposPieChart data={resumen.transaccionesPorTipo} />
+            </div>
+
+            <div className="chart-container chart-full-width">
+              <h3>Tendencia por Hora (Ingresos y Egresos)</h3>
+              <TendenciaHoraChart transacciones={transacciones} />
             </div>
           </div>
         </>

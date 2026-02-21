@@ -1,4 +1,6 @@
 ---
+import '../styles/dashboard.css';
+
 interface Props {
   title?: string;
 }
@@ -24,7 +26,3 @@ const { title = 'Finanzas Negocio - Dashboard' } = Astro.props;
 		<slot />
 	</body>
 </html>
-
-<style is:global>
-	@import '../styles/dashboard.css';
-</style>

@@ -30,38 +30,39 @@ export function BalanceChart({ data }: BalanceChartProps) {
 
   return (
     <ResponsiveContainer width="100%" height={300}>
-      <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+      <BarChart data={chartData} margin={{ top: 20, right: 20, left: 10, bottom: 5 }}>
+        <CartesianGrid strokeDasharray="3 3" stroke="#1f5f46" />
         <XAxis 
           dataKey="fecha" 
-          stroke="#9CA3AF" 
-          fontSize={12}
+          stroke="#a6c7b7" 
+          fontSize={11}
           tickMargin={10}
+          interval="preserveStartEnd"
         />
         <YAxis 
-          stroke="#9CA3AF" 
-          fontSize={12}
+          stroke="#a6c7b7" 
+          fontSize={11}
           tickFormatter={formatMoney}
         />
         <Tooltip
           contentStyle={{
-            backgroundColor: '#1F2937',
-            border: '1px solid #374151',
+            backgroundColor: '#0b2b1f',
+            border: '1px solid #1f5f46',
             borderRadius: '8px',
           }}
-          labelStyle={{ color: '#F3F4F6' }}
+          labelStyle={{ color: '#f4fff8' }}
           formatter={(value) => [`S/ ${Number(value).toFixed(2)}`, '']}
         />
-        <Legend />
+        <Legend wrapperStyle={{ fontSize: '0.85rem' }} />
         <Bar 
           dataKey="egresos" 
-          fill="#EF4444" 
+          fill="#ff7a7a" 
           name="Egresos" 
           radius={[4, 4, 0, 0]}
         />
         <Bar 
           dataKey="ingresos" 
-          fill="#10B981" 
+          fill="#2fbf71" 
           name="Ingresos" 
           radius={[4, 4, 0, 0]}
         />
