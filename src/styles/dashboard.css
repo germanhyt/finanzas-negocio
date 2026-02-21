@@ -253,6 +253,125 @@ html, body {
   font-size: 1.1rem;
 }
 
+.export-panel {
+  display: flex;
+  gap: 1rem;
+  align-items: stretch;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.cierre-card {
+  flex: 1 1 460px;
+  background: linear-gradient(135deg, rgba(17, 64, 48, 0.95) 0%, rgba(11, 43, 31, 1) 100%);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  padding: 1.1rem 1.25rem;
+}
+
+.cierre-card h3 {
+  font-size: 1.08rem;
+  margin-bottom: 0.35rem;
+}
+
+.cuadre-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.65rem;
+  margin-bottom: 0.8rem;
+}
+
+.cuadre-filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.cuadre-filter-group label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.cuadre-filter-group input {
+  padding: 0.56rem 0.65rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 38px;
+}
+
+.cuadre-filter-group input[type='date'] {
+  color-scheme: dark;
+}
+
+.cuadre-filter-group input[type='date']::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  filter: invert(88%) sepia(22%) saturate(282%) hue-rotate(94deg) brightness(104%) contrast(92%);
+  opacity: 1;
+}
+
+.btn-cuadre-clear {
+  min-height: 38px;
+  padding: 0.56rem 0.85rem;
+  font-size: 0.86rem;
+}
+
+.cierre-date {
+  color: var(--text-secondary);
+  margin-bottom: 0.85rem;
+  font-size: 0.92rem;
+}
+
+.cierre-empty {
+  color: var(--text-secondary);
+  padding: 0.7rem 0.2rem;
+}
+
+.cierre-values {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem 0.75rem;
+  font-size: 0.95rem;
+}
+
+.cierre-values span {
+  background: rgba(47, 191, 113, 0.09);
+  border: 1px solid rgba(47, 191, 113, 0.2);
+  border-radius: 8px;
+  padding: 0.48rem 0.6rem;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.export-actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: stretch;
+  justify-content: flex-end;
+  flex: 0 1 360px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  padding: 0.9rem;
+}
+
+.export-actions .btn {
+  min-height: 42px;
+}
+
+.export-actions .btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
 /* Notifications */
 .notifications-bell {
   position: absolute;
@@ -534,6 +653,37 @@ html, body {
   .date-filter {
     flex-direction: column;
     padding: 1rem;
+  }
+
+  .export-panel {
+    flex-direction: column;
+    margin-top: 1rem;
+  }
+
+  .cierre-values {
+    grid-template-columns: 1fr;
+  }
+
+  .cuadre-filter-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .cuadre-filter-group {
+    width: 100%;
+  }
+
+  .cuadre-filter-group input {
+    width: 100%;
+  }
+
+  .export-actions {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .export-actions .btn {
+    flex: 1;
   }
 
   .filter-group {

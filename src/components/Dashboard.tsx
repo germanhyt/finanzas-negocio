@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { Transaccion, ResumenFinanciero } from '../lib/types';
 import { StatsCards } from './StatsCards';
 import { BalanceChart } from './BalanceChart';
@@ -7,6 +7,11 @@ import { TendenciaHoraChart } from './TendenciaHoraChart';
 import { TransaccionesTable } from './TransaccionesTable';
 import { DateFilter } from './DateFilter';
 import { LatestNotifications } from './LatestNotifications';
+import {
+  calcularCuadreCierreDia,
+  exportarCuadreExcel,
+  exportarCuadrePdf,
+} from '../lib/export';
 
 interface DashboardProps {
   initialData?: {
@@ -26,6 +31,21 @@ export function Dashboard({ initialData }: DashboardProps) {
   const [error, setError] = useState<string | null>(null);
   const [fechaDesde, setFechaDesde] = useState<string>('');
   const [fechaHasta, setFechaHasta] = useState<string>('');
+  const [cuadreDesde, setCuadreDesde] = useState<string>('');
+  const [cuadreHasta, setCuadreHasta] = useState<string>('');
+  const [exporting, setExporting] = useState<'excel' | 'pdf' | null>(null);
+
+  const transaccionesCuadre = useMemo(() => {
+    return transacciones.filter((tx) => {
+      if (cuadreDesde && tx.Fecha < cuadreDesde) return false;
+      if (cuadreHasta && tx.Fecha > cuadreHasta) return false;
+      return true;
+    });
+  }, [transacciones, cuadreDesde, cuadreHasta]);
+
+  const cuadreCierreDia = useMemo(() => {
+    return calcularCuadreCierreDia(transaccionesCuadre);
+  }, [transaccionesCuadre]);
 
   const fetchData = useCallback(async (
     options?: { silent?: boolean; desde?: string; hasta?: string }
@@ -90,6 +110,46 @@ export function Dashboard({ initialData }: DashboardProps) {
     setFechaDesde('');
     setFechaHasta('');
     fetchData({ desde: '', hasta: '' });
+  };
+
+  const handleClearCuadreFilter = () => {
+    setCuadreDesde('');
+    setCuadreHasta('');
+  };
+
+  const formatMoney = (value: number) => {
+    return new Intl.NumberFormat('es-PE', {
+      style: 'currency',
+      currency: 'PEN',
+    }).format(value);
+  };
+
+  const handleExportExcel = async () => {
+    if (!cuadreCierreDia || exporting) return;
+
+    setExporting('excel');
+    try {
+      await exportarCuadreExcel(transaccionesCuadre, cuadreCierreDia);
+    } catch (err) {
+      console.error(err);
+      setError('No se pudo exportar el archivo Excel');
+    } finally {
+      setExporting(null);
+    }
+  };
+
+  const handleExportPdf = async () => {
+    if (!cuadreCierreDia || exporting) return;
+
+    setExporting('pdf');
+    try {
+      await exportarCuadrePdf(transaccionesCuadre, cuadreCierreDia);
+    } catch (err) {
+      console.error(err);
+      setError('No se pudo exportar el archivo PDF');
+    } finally {
+      setExporting(null);
+    }
   };
 
   if (loading) {
@@ -159,6 +219,74 @@ export function Dashboard({ initialData }: DashboardProps) {
         <h3>Últimas Transacciones</h3>
         <TransaccionesTable transacciones={transacciones} />
       </div>
+
+      {transacciones.length > 0 && (
+        <section className="export-panel">
+          <div className="cierre-card">
+            <h3>Cuadre de cierre del día</h3>
+            <div className="cuadre-filter-row">
+              <div className="cuadre-filter-group">
+                <label htmlFor="cuadre-desde">Desde</label>
+                <input
+                  id="cuadre-desde"
+                  type="date"
+                  value={cuadreDesde}
+                  onChange={(e) => setCuadreDesde(e.target.value)}
+                />
+              </div>
+              <div className="cuadre-filter-group">
+                <label htmlFor="cuadre-hasta">Hasta</label>
+                <input
+                  id="cuadre-hasta"
+                  type="date"
+                  value={cuadreHasta}
+                  onChange={(e) => setCuadreHasta(e.target.value)}
+                />
+              </div>
+              <button
+                type="button"
+                className="btn btn-secondary btn-cuadre-clear"
+                onClick={handleClearCuadreFilter}
+              >
+                Limpiar rango
+              </button>
+            </div>
+
+            {cuadreCierreDia ? (
+              <>
+                <p className="cierre-date">Fecha: {cuadreCierreDia.fecha}</p>
+                <div className="cierre-values">
+                  <span>Ingresos: {formatMoney(cuadreCierreDia.ingresos)}</span>
+                  <span>Egresos: {formatMoney(cuadreCierreDia.egresos)}</span>
+                  <span>Balance: {formatMoney(cuadreCierreDia.balance)}</span>
+                  <span>Transacciones: {cuadreCierreDia.totalTransacciones}</span>
+                </div>
+              </>
+            ) : (
+              <p className="cierre-empty">Sin movimientos para el rango seleccionado.</p>
+            )}
+          </div>
+
+          <div className="export-actions">
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => { void handleExportExcel(); }}
+              disabled={exporting !== null || !cuadreCierreDia}
+            >
+              {exporting === 'excel' ? '📊 Exportando Excel...' : '📊 Exportar Excel'}
+            </button>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => { void handleExportPdf(); }}
+              disabled={exporting !== null || !cuadreCierreDia}
+            >
+              {exporting === 'pdf' ? '🧾 Exportando PDF...' : '🧾 Exportar PDF'}
+            </button>
+          </div>
+        </section>
+      )}
     </div>
   );
 }
