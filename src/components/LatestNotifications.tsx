@@ -15,27 +15,47 @@ function playNotificationSound() {
   }
 
   const audioContext = new window.AudioContext();
-  const oscillator = audioContext.createOscillator();
-  const gainNode = audioContext.createGain();
-  const duration = 0.45;
 
-  oscillator.type = 'sine';
-  oscillator.frequency.setValueAtTime(880, audioContext.currentTime);
-  oscillator.frequency.exponentialRampToValueAtTime(660, audioContext.currentTime + duration);
+  const createStrike = (startTime: number, intensity = 1) => {
+    const masterGain = audioContext.createGain();
+    masterGain.gain.setValueAtTime(0.0001, startTime);
+    masterGain.gain.exponentialRampToValueAtTime(0.6 * intensity, startTime + 0.02);
+    masterGain.gain.exponentialRampToValueAtTime(0.0001, startTime + 1.05);
+    masterGain.connect(audioContext.destination);
 
-  gainNode.gain.setValueAtTime(0.0001, audioContext.currentTime);
-  gainNode.gain.exponentialRampToValueAtTime(0.2, audioContext.currentTime + 0.03);
-  gainNode.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + duration);
+    const partials = [
+      { freq: 1046.5, gain: 0.9 },
+      { freq: 1318.5, gain: 0.6 },
+      { freq: 1568.0, gain: 0.4 },
+    ];
 
-  oscillator.connect(gainNode);
-  gainNode.connect(audioContext.destination);
+    partials.forEach((partial) => {
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
 
-  oscillator.start();
-  oscillator.stop(audioContext.currentTime + duration);
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(partial.freq, startTime);
+      oscillator.frequency.exponentialRampToValueAtTime(partial.freq * 0.92, startTime + 1.05);
 
-  oscillator.onended = () => {
-    audioContext.close().catch(() => undefined);
+      gainNode.gain.setValueAtTime(0.0001, startTime);
+      gainNode.gain.exponentialRampToValueAtTime(partial.gain, startTime + 0.015);
+      gainNode.gain.exponentialRampToValueAtTime(0.0001, startTime + 1.05);
+
+      oscillator.connect(gainNode);
+      gainNode.connect(masterGain);
+
+      oscillator.start(startTime);
+      oscillator.stop(startTime + 1.05);
+    });
   };
+
+  const startTime = audioContext.currentTime;
+  createStrike(startTime, 1);
+  createStrike(startTime + 0.28, 0.8);
+
+  window.setTimeout(() => {
+    audioContext.close().catch(() => undefined);
+  }, 1800);
 }
 
 export function LatestNotifications({
