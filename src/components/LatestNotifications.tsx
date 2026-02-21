@@ -9,12 +9,12 @@ interface LatestNotificationsProps {
 
 const DEFAULT_STORAGE_KEY = 'finanzas-notifications-sound-enabled';
 
-function playNotificationSound() {
-  if (typeof window === 'undefined' || typeof window.AudioContext === 'undefined') {
-    return;
+async function playNotificationSound(audioContext: AudioContext) {
+  if (audioContext.state === 'suspended') {
+    await audioContext.resume();
   }
 
-  const audioContext = new window.AudioContext();
+  const now = audioContext.currentTime;
 
   const createStrike = (startTime: number, intensity = 1) => {
     const masterGain = audioContext.createGain();
@@ -49,13 +49,9 @@ function playNotificationSound() {
     });
   };
 
-  const startTime = audioContext.currentTime;
+  const startTime = now;
   createStrike(startTime, 1);
   createStrike(startTime + 0.28, 0.8);
-
-  window.setTimeout(() => {
-    audioContext.close().catch(() => undefined);
-  }, 1800);
 }
 
 export function LatestNotifications({
@@ -65,8 +61,23 @@ export function LatestNotifications({
 }: LatestNotificationsProps) {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
+  const [isBellVibrating, setIsBellVibrating] = useState(false);
   const initializedRef = useRef(false);
   const knownOperationsRef = useRef<Set<string>>(new Set());
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const vibrationTimeoutRef = useRef<ReturnType<typeof window.setTimeout> | null>(null);
+
+  const getOrCreateAudioContext = () => {
+    if (typeof window === 'undefined' || typeof window.AudioContext === 'undefined') {
+      return null;
+    }
+
+    if (!audioContextRef.current) {
+      audioContextRef.current = new window.AudioContext();
+    }
+
+    return audioContextRef.current;
+  };
 
   const latestItems = useMemo(() => {
     return transacciones.slice(0, maxItems);
@@ -80,6 +91,57 @@ export function LatestNotifications({
       setSoundEnabled(false);
     }
   }, [storageKey]);
+
+  useEffect(() => {
+    const unlockAudio = async () => {
+      const context = getOrCreateAudioContext();
+      if (!context) return;
+
+      if (context.state === 'suspended') {
+        try {
+          await context.resume();
+        } catch {
+          return;
+        }
+      }
+    };
+
+    const events: Array<keyof WindowEventMap> = ['click', 'keydown', 'touchstart'];
+    events.forEach((eventName) => {
+      window.addEventListener(eventName, unlockAudio, { passive: true });
+    });
+
+    return () => {
+      events.forEach((eventName) => {
+        window.removeEventListener(eventName, unlockAudio);
+      });
+
+      if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+        audioContextRef.current.close().catch(() => undefined);
+        audioContextRef.current = null;
+      }
+
+      if (vibrationTimeoutRef.current !== null) {
+        window.clearTimeout(vibrationTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const triggerBellVibration = () => {
+    setIsBellVibrating(true);
+
+    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+      navigator.vibrate([120, 70, 120]);
+    }
+
+    if (vibrationTimeoutRef.current !== null) {
+      window.clearTimeout(vibrationTimeoutRef.current);
+    }
+
+    vibrationTimeoutRef.current = window.setTimeout(() => {
+      setIsBellVibrating(false);
+    }, 900);
+  };
 
   useEffect(() => {
     if (!initializedRef.current) {
@@ -96,7 +158,11 @@ export function LatestNotifications({
     });
 
     if (newOperations.length > 0 && soundEnabled) {
-      playNotificationSound();
+      const context = getOrCreateAudioContext();
+      if (context) {
+        void playNotificationSound(context).catch(() => undefined);
+      }
+      triggerBellVibration();
     }
 
     newOperations.forEach((tx) => {
@@ -120,7 +186,7 @@ export function LatestNotifications({
     <div className="notifications-bell" aria-live="polite">
       <button
         type="button"
-        className="notifications-bell-button"
+        className={`notifications-bell-button ${isBellVibrating ? 'vibrating' : ''}`}
         onClick={() => setIsOpen((previousValue) => !previousValue)}
         aria-expanded={isOpen}
         aria-label="Abrir notificaciones"

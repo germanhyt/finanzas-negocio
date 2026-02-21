@@ -242,6 +242,20 @@ html, body {
   box-shadow: var(--shadow);
 }
 
+.notifications-bell-button.vibrating {
+  animation: bell-ring 0.9s ease-in-out;
+}
+
+@keyframes bell-ring {
+  0% { transform: rotate(0deg); }
+  15% { transform: rotate(14deg); }
+  30% { transform: rotate(-12deg); }
+  45% { transform: rotate(10deg); }
+  60% { transform: rotate(-8deg); }
+  75% { transform: rotate(5deg); }
+  100% { transform: rotate(0deg); }
+}
+
 .notifications-dropdown {
   position: absolute;
   top: calc(100% + 0.5rem);
