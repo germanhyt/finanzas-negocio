@@ -29,6 +29,8 @@ export const POST: APIRoute = async ({ request }) => {
     const transaccion: Transaccion = {
       Fecha: payload.fecha,
       Hora: payload.hora,
+      Movimiento: payload.movimiento || '',
+      Concepto: payload.concepto || '',
       Banco: payload.banco,
       Tipo: payload.tipo,
       Destinatario: payload.destinatario,

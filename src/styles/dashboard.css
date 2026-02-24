@@ -514,11 +514,17 @@ html, body {
   -webkit-overflow-scrolling: touch;
 }
 
+.transacciones-table-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
 .transacciones-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.9rem;
-  min-width: 740px;
+  min-width: 980px;
 }
 
 .transacciones-table th,
@@ -543,6 +549,13 @@ html, body {
 
 .destinatario {
   max-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.concepto {
+  max-width: 260px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -577,6 +590,59 @@ html, body {
 .badge-banco {
   background: var(--accent-primary);
   color: #032013;
+}
+
+.badge-movimiento {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.table-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.table-pagination-info {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.table-pagination-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.table-page-status {
+  min-width: 112px;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.table-page-btn {
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border-radius: 10px;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.table-page-btn:hover:not(:disabled) {
+  border-color: var(--accent-primary);
+}
+
+.table-page-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .tipo-egreso {

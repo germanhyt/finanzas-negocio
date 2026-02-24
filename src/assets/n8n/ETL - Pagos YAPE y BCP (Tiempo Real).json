@@ -10,18 +10,20 @@
             }
           ]
         },
+        "simple": false,
         "filters": {
           "q": "label:PAGOS/BCP/YAPE ",
           "readStatus": "unread"
-        }
+        },
+        "options": {}
       },
       "id": "6aa6f9c4-b090-44b1-a0b4-c60629c7bc45",
       "name": "Escuchar Correos Nuevos",
       "type": "n8n-nodes-base.gmailTrigger",
       "typeVersion": 1,
       "position": [
-        -48,
-        -96
+        -384,
+        80
       ],
       "credentials": {
         "gmailOAuth2": {
@@ -33,15 +35,119 @@
     {
       "parameters": {
         "language": "python",
-        "pythonCode": "import re\n\n# --- 1. Módulo para Yape y Pago con QR ---\ndef parse_notificacion_bcp(text, tipo):\n    monto_match = re.search(r'Monto enviado\\s*(?:S/|PEN|s/.)?\\s*([\\d,]+\\.\\d{2})', text, re.IGNORECASE)\n    if not monto_match:\n        monto_match = re.search(r'yapeo a celular de\\s*(?:S/|PEN)?\\s*([\\d,]+\\.\\d{2})', text, re.IGNORECASE)\n        \n    destinatario_match = re.search(r'Enviado a\\s*(.*?)\\s*(?:\\*+|Destino|Desde|Moneda)', text, re.IGNORECASE | re.DOTALL)\n    num_op_match = re.search(r'Número de operación\\s*(\\d+)', text, re.IGNORECASE)\n    \n    monto = float(monto_match.group(1).replace(',', '')) if monto_match else 0.0\n    destinatario = destinatario_match.group(1).replace('\\n', ' ').strip() if destinatario_match else \"Desconocido\"\n    num_operacion = num_op_match.group(1) if num_op_match else \"N/A\"\n    \n    return {\n        \"banco\": \"BCP\",\n        \"tipo_operacion\": tipo,\n        \"monto\": monto,\n        \"destinatario\": destinatario,\n        \"num_operacion\": num_operacion\n    }\n\n# --- 2. NUEVO Módulo para Pago de Servicios ---\ndef parse_pago_servicio_bcp(text):\n    # Ultra-resistente para Monto: Busca \"Monto total\", ignora basura/saltos de línea hasta encontrar \"S/\" o \"PEN\" y atrapa el número\n    monto_match = re.search(r'Monto total.*?(?:S/|PEN).*?([\\d,]+\\.\\d{2})', text, re.IGNORECASE | re.DOTALL)\n    if not monto_match:\n        monto_match = re.search(r'Importe.*?(?:S/|PEN).*?([\\d,]+\\.\\d{2})', text, re.IGNORECASE | re.DOTALL)\n    \n    # Ultra-resistente para Destinatario: Captura todo entre \"Empresa:\" y \"Servicio:\"\n    destinatario_match = re.search(r'Empresa\\s*:(.*?)(?:Servicio|Titular)', text, re.IGNORECASE | re.DOTALL)\n    \n    # Ultra-resistente para Operación: \\D* ignora TODO lo que no sea número (saltos, espacios, letras) y atrapa el primer bloque de números de 6+ dígitos\n    num_op_match = re.search(r'Número de operación\\D*(\\d{6,})', text, re.IGNORECASE)\n    \n    # Limpieza\n    monto = float(monto_match.group(1).replace(',', '')) if monto_match else 0.0\n    destinatario = destinatario_match.group(1).replace('\\n', ' ').strip() if destinatario_match else \"Desconocido\"\n    num_operacion = num_op_match.group(1) if num_op_match else \"N/A\"\n    \n    return {\n        \"banco\": \"BCP\",\n        \"tipo_operacion\": \"PAGO_SERVICIO\",\n        \"monto\": monto,\n        \"destinatario\": destinatario,\n        \"num_operacion\": num_operacion\n    }\n\n# --- Lógica Principal de Enrutamiento ---\nresult = []\nfor item in _input.all():\n    subject = item.json.get('subject', '').upper()\n    \n    # --- SEPARACIÓN DE FECHA Y HORA ---\n    raw_date = item.json.get('date', '')\n    fecha_solo = raw_date\n    hora_solo = \"\"\n    if 'T' in raw_date:\n        partes = raw_date.split('T')\n        if len(partes) == 2:\n            fecha_solo = partes[0]\n            hora_solo = partes[1][:8]\n\n    body = item.json.get('text', '')\n        \n    # --- ENRUTAMIENTO (El \"Cerebro\") ---\n    if 'PAGO CON QR' in subject:\n        data = parse_notificacion_bcp(body, \"PAGO_QR\")\n    elif 'YAPEO A CELULAR' in subject or 'TRANSFERENCIA' in subject:\n        data = parse_notificacion_bcp(body, \"YAPEO_CELULAR\")\n    elif 'PAGO DE SERVICIO' in subject:\n        # Agregamos la nueva ruta\n        data = parse_pago_servicio_bcp(body)\n    else:\n        data = {\"banco\": \"PENDIENTE_MAPEO\", \"tipo_operacion\": \"DESCONOCIDO\", \"monto\": 0.0, \"destinatario\": \"N/A\", \"num_operacion\": \"N/A\"}\n    \n    # --- CONSTRUCCIÓN PLANA DE VARIABLES ---\n    item.json['fecha'] = fecha_solo\n    item.json['hora'] = hora_solo\n    item.json['banco'] = data[\"banco\"]\n    item.json['tipo'] = data[\"tipo_operacion\"]\n    item.json['monto'] = data[\"monto\"]\n    item.json['destinatario'] = data[\"destinatario\"]\n    item.json['num_operacion'] = data[\"num_operacion\"]\n    \n    result.append(item)\n\nreturn result"
+        "pythonCode": "import re\n\n# --- Funciones Auxiliares (Clean Code) ---\ndef clean_text(text):\n    \"\"\"Limpia saltos de línea y espacios en blanco de los textos extraídos.\"\"\"\n    if not text: \n        return \"\"\n    return text.replace('\\n', ' ').strip()\n\n# --- 1. Módulo para Yape y Pago con QR ---\ndef parse_notificacion_bcp(text, tipo):\n    monto_match = re.search(r'(?:Monto enviado|yapeo a celular de)\\s*(?:S/|PEN|s/.)?\\s*([\\d,]+\\.\\d{2})', text, re.IGNORECASE)\n    destinatario_match = re.search(r'Enviado a\\s*(.*?)\\s*(?:\\*+|Destino|Desde|Moneda)', text, re.IGNORECASE | re.DOTALL)\n    num_op_match = re.search(r'Número de operación\\s*(\\d+)', text, re.IGNORECASE)\n    \n    # NUEVO: Capturar el Concepto (Mensaje enviado en el Yape)\n    concepto_match = re.search(r'Mensaje\\s*(.*?)\\s*Canal', text, re.IGNORECASE | re.DOTALL)\n    concepto_limpio = clean_text(concepto_match.group(1)) if concepto_match else \"\"\n    \n    return {\n        \"movimiento\": \"EGRESO\",\n        \"concepto\": concepto_limpio if concepto_limpio else \"Sin mensaje\",\n        \"banco\": \"BCP\",\n        \"tipo_operacion\": tipo,\n        \"monto\": float(monto_match.group(1).replace(',', '')) if monto_match else 0.0,\n        \"destinatario\": clean_text(destinatario_match.group(1)) if destinatario_match else \"Desconocido\",\n        \"num_operacion\": num_op_match.group(1) if num_op_match else \"N/A\"\n    }\n\n# --- 2. Módulo para Pago de Servicios ---\ndef parse_pago_servicio_bcp(text):\n    monto_match = re.search(r'(?:Monto total|Importe).*?(?:S/|PEN).*?([\\d,]+\\.\\d{2})', text, re.IGNORECASE | re.DOTALL)\n    destinatario_match = re.search(r'Empresa\\s*:(.*?)(?:Servicio|Titular)', text, re.IGNORECASE | re.DOTALL)\n    num_op_match = re.search(r'Número de operación\\D*(\\d{6,})', text, re.IGNORECASE)\n    \n    # NUEVO: Capturar el Concepto (El nombre del servicio pagado)\n    concepto_match = re.search(r'Servicio\\s*:(.*?)(?:Titular del servicio:|Código de usuario:)', text, re.IGNORECASE | re.DOTALL)\n    \n    return {\n        \"movimiento\": \"EGRESO\",\n        \"concepto\": clean_text(concepto_match.group(1)) if concepto_match else \"Pago de Servicio\",\n        \"banco\": \"BCP\",\n        \"tipo_operacion\": \"PAGO_SERVICIO\",\n        \"monto\": float(monto_match.group(1).replace(',', '')) if monto_match else 0.0,\n        \"destinatario\": clean_text(destinatario_match.group(1)) if destinatario_match else \"Desconocido\",\n        \"num_operacion\": num_op_match.group(1) if num_op_match else \"N/A\"\n    }\n\n# --- Lógica Principal de Enrutamiento ---\nresult = []\nfor item in _input.all():\n    subject = item.json.get('subject', '').upper()\n    \n    # --- SEPARACIÓN DE FECHA Y HORA ---\n    raw_date = item.json.get('date', '')\n    fecha_solo = raw_date\n    hora_solo = \"\"\n    if 'T' in raw_date:\n        partes = raw_date.split('T')\n        if len(partes) == 2:\n            fecha_solo = partes[0]\n            hora_solo = partes[1][:8]\n\n    body = item.json.get('text', '')\n        \n    # --- ENRUTAMIENTO ---\n    if 'PAGO CON QR' in subject:\n        data = parse_notificacion_bcp(body, \"PAGO_QR\")\n    elif 'YAPEO A CELULAR' in subject or 'TRANSFERENCIA' in subject:\n        data = parse_notificacion_bcp(body, \"YAPEO_CELULAR\")\n    elif 'PAGO DE SERVICIO' in subject:\n        data = parse_pago_servicio_bcp(body)\n    else:\n        # Template por defecto si no hace match\n        data = {\n            \"movimiento\": \"N/A\", \n            \"concepto\": \"N/A\", \n            \"banco\": \"PENDIENTE_MAPEO\", \n            \"tipo_operacion\": \"DESCONOCIDO\", \n            \"monto\": 0.0, \n            \"destinatario\": \"N/A\", \n            \"num_operacion\": \"N/A\"\n        }\n    \n    # --- CONSTRUCCIÓN PLANA DE VARIABLES ---\n    item.json['fecha'] = fecha_solo\n    item.json['hora'] = hora_solo\n    item.json['movimiento'] = data[\"movimiento\"]\n    item.json['concepto'] = data[\"concepto\"]\n    item.json['banco'] = data[\"banco\"]\n    item.json['tipo'] = data[\"tipo_operacion\"]\n    item.json['monto'] = data[\"monto\"]\n    item.json['destinatario'] = data[\"destinatario\"]\n    item.json['num_operacion'] = data[\"num_operacion\"]\n    \n    result.append(item)\n\nreturn result"
       },
       "id": "6230b376-616f-4863-8ffe-cb8af1254431",
       "name": "Parsear Datos (Python)",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -32,
-        208
+        -112,
+        176
+      ]
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -448,
+        400
+      ],
+      "id": "cef52195-b596-492f-8919-2e9405eac379",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      \"subject\": \"Constancia de Yapeo a Celular - Servicio de Notificaciones BCP\",\n      \"date\": \"2026-02-19T13:26:46.000Z\",\n      \"text\": \"Hola German Ivan,\\n\\nRealizaste un yapeo a celular de S/ 3.50 desde tu Cuenta de ahorro Soles.\\n\\nA continuación, te enviamos los datos de tu operación.\\n\\nMontos\\n\\nMonto enviado S/ 3.50\\n\\nDatos de la operación\\n\\nOperación realizada Yapear a celular Fecha y hora 19 de febrero de 2026 - 08:26\\nAM Enviado a Test testing.\\n*** **3 403 Destino Yape Desde Cuenta de ahorro\\n**** 5057 Moneda Soles Mensaje Canal Banca Móvil BCP Número de operación\\n0099116666\"\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -224,
+        400
+      ],
+      "id": "3258cdc9-66f7-4028-9371-109983d49a33",
+      "name": "Mock Data"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://finanzas-negocio-liard.vercel.app/api/webhook",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Webhook-Secret",
+              "value": "q5jWc72zgIMeYXGnCakKrSTsRDJmt69fbP0LZ4l1Q3NvyxwHFVBiEdOh8UopAu"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        336,
+        240
+      ],
+      "id": "aec7f6a1-4651-487e-918e-dd104f666cd9",
+      "name": "Notificar a Web (Webhook)"
+    },
+    {
+      "parameters": {
+        "fields": {
+          "values": [
+            {
+              "name": "Fecha",
+              "stringValue": "={{ $json.fecha }}"
+            },
+            {
+              "name": "Hora",
+              "stringValue": "={{ $json.hora }}"
+            },
+            {
+              "name": "Movimiento",
+              "stringValue": "={{ $json.movimiento }}"
+            },
+            {
+              "name": "Banco",
+              "stringValue": "={{ $json.banco }}"
+            },
+            {
+              "name": "Concepto",
+              "stringValue": "={{ $json.concepto }}"
+            },
+            {
+              "name": "Tipo",
+              "stringValue": "={{ $json.tipo }}"
+            },
+            {
+              "name": "Destinatario",
+              "stringValue": "={{ $json.destinatario }}"
+            },
+            {
+              "name": "Num_Operacion",
+              "stringValue": "={{ $json.num_operacion }}"
+            },
+            {
+              "name": "Monto",
+              "stringValue": "={{ $json.monto }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "4cc5e4a2-87f3-46f6-a745-0a7bf13d698c",
+      "name": "Preparar campos",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [
+        96,
+        176
       ]
     },
     {
@@ -70,7 +176,9 @@
             "Destinatario": "={{ $json.destinatario }}",
             "Num_Operacion": "={{ $json.Num_Operacion }}",
             "Monto": "={{ $json.Monto }}",
-            "Hora": "={{ $json.Hora }}"
+            "Hora": "={{ $json.Hora }}",
+            "Movimiento": "={{ $json.movimiento }}",
+            "Concepto": "={{ $json.Concepto }}"
           },
           "matchingColumns": [
             "Num_Operacion"
@@ -96,6 +204,16 @@
               "removed": false
             },
             {
+              "id": "Movimiento",
+              "displayName": "Movimiento",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
               "id": "Banco",
               "displayName": "Banco",
               "required": false,
@@ -103,6 +221,16 @@
               "display": true,
               "type": "string",
               "canBeUsedToMatch": true
+            },
+            {
+              "id": "Concepto",
+              "displayName": "Concepto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
             },
             {
               "id": "Tipo",
@@ -147,13 +275,13 @@
         },
         "options": {}
       },
-      "id": "2dfa49a2-64fd-4198-b0cd-9992978c481d",
-      "name": "Append Rows in Sheet",
+      "id": "3b299a82-d147-4aa3-95a1-5748c459069f",
+      "name": "Append Rows in Sheet1",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4,
       "position": [
-        432,
-        80
+        320,
+        0
       ],
       "credentials": {
         "googleSheetsOAuth2Api": {
@@ -161,105 +289,19 @@
           "name": "german-personal"
         }
       }
-    },
-    {
-      "parameters": {
-        "fields": {
-          "values": [
-            {
-              "name": "Fecha",
-              "stringValue": "={{ $json.fecha }}"
-            },
-            {
-              "name": "Hora",
-              "stringValue": "={{ $json.hora }}"
-            },
-            {
-              "name": "Banco",
-              "stringValue": "={{ $json.banco }}"
-            },
-            {
-              "name": "Tipo",
-              "stringValue": "={{ $json.tipo }}"
-            },
-            {
-              "name": "Destinatario",
-              "stringValue": "={{ $json.destinatario }}"
-            },
-            {
-              "name": "Num_Operacion",
-              "stringValue": "={{ $json.num_operacion }}"
-            },
-            {
-              "name": "Monto",
-              "stringValue": "={{ $json.monto }}"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "id": "3beeb258-444c-4107-b413-cbf3634dec17",
-      "name": "Preparar campos",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3,
-      "position": [
-        192,
-        304
-      ]
-    },
-    {
-      "parameters": {},
-      "type": "n8n-nodes-base.manualTrigger",
-      "typeVersion": 1,
-      "position": [
-        -448,
-        320
-      ],
-      "id": "cef52195-b596-492f-8919-2e9405eac379",
-      "name": "When clicking ‘Execute workflow’"
-    },
-    {
-      "parameters": {
-        "jsCode": "return [\n  {\n    json: {\n      \"subject\": \"Constancia de Yapeo a Celular - Servicio de Notificaciones BCP\",\n      \"date\": \"2026-02-19T13:26:46.000Z\",\n      \"text\": \"Hola German Ivan,\\n\\nRealizaste un yapeo a celular de S/ 3.50 desde tu Cuenta de ahorro Soles.\\n\\nA continuación, te enviamos los datos de tu operación.\\n\\nMontos\\n\\nMonto enviado S/ 3.50\\n\\nDatos de la operación\\n\\nOperación realizada Yapear a celular Fecha y hora 19 de febrero de 2026 - 08:26\\nAM Enviado a Test testing.\\n*** **3 403 Destino Yape Desde Cuenta de ahorro\\n**** 5057 Moneda Soles Mensaje Canal Banca Móvil BCP Número de operación\\n00575543\"\n    }\n  }\n];"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        -256,
-        320
-      ],
-      "id": "3258cdc9-66f7-4028-9371-109983d49a33",
-      "name": "Mock Data"
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "sendBody": true,
-        "bodyParameters": {
-          "parameters": [
-            {
-              "name": "json",
-              "value": "={{ $json }}"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.3,
-      "position": [
-        448,
-        384
-      ],
-      "id": "aec7f6a1-4651-487e-918e-dd104f666cd9",
-      "name": "Notificar a Web (Webhook)"
     }
   ],
   "pinData": {},
   "connections": {
     "Escuchar Correos Nuevos": {
       "main": [
-        []
+        [
+          {
+            "node": "Parsear Datos (Python)",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Parsear Datos (Python)": {
@@ -267,22 +309,6 @@
         [
           {
             "node": "Preparar campos",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Preparar campos": {
-      "main": [
-        [
-          {
-            "node": "Append Rows in Sheet",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Notificar a Web (Webhook)",
             "type": "main",
             "index": 0
           }
@@ -302,9 +328,19 @@
     },
     "Mock Data": {
       "main": [
+        []
+      ]
+    },
+    "Preparar campos": {
+      "main": [
         [
           {
-            "node": "Parsear Datos (Python)",
+            "node": "Append Rows in Sheet1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Notificar a Web (Webhook)",
             "type": "main",
             "index": 0
           }
@@ -312,11 +348,11 @@
       ]
     }
   },
-  "active": false,
+  "active": true,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "9c9a5841-ca02-4f18-bc8a-d5081ef6113f",
+  "versionId": "45210b2f-43c0-44a2-8d5b-ce1e355bba5e",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "0fe2d092259553ef8ee26e1e7d1ba87d8a0df8994f404066522276b2e2eae95f"

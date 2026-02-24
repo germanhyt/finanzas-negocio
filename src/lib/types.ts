@@ -2,6 +2,8 @@
 export interface Transaccion {
   Fecha: string;
   Hora: string;
+  Movimiento: string;
+  Concepto: string;
   Banco: string;
   Tipo: string;
   Destinatario: string;
@@ -21,6 +23,8 @@ export interface ResumenFinanciero {
 export interface WebhookPayload {
   fecha: string;
   hora: string;
+  movimiento?: string;
+  concepto?: string;
   banco: string;
   tipo: string;
   monto: number;

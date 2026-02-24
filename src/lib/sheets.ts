@@ -68,19 +68,52 @@ export async function getTransacciones(): Promise<Transaccion[]> {
 	try {
 		const response = await sheets.spreadsheets.values.get({
 			spreadsheetId,
-			range: 'DB!A2:G',
+			range: 'DB!A1:Z',
 		});
 
-		const rows = response.data.values || [];
+		const values = response.data.values || [];
+
+		if (values.length === 0) {
+			return [];
+		}
+
+		const [headerRow, ...rows] = values;
+
+		const normalizedHeaders = (headerRow || []).map((header) =>
+			String(header || '').trim().toUpperCase()
+		);
+
+		const columnIndex = (columnName: string) =>
+			normalizedHeaders.indexOf(columnName.toUpperCase());
+
+		const fechaIdx = columnIndex('Fecha');
+		const horaIdx = columnIndex('Hora');
+		const movimientoIdx = columnIndex('Movimiento');
+		const conceptoIdx = columnIndex('Concepto');
+		const bancoIdx = columnIndex('Banco');
+		const tipoIdx = columnIndex('Tipo');
+		const destinatarioIdx = columnIndex('Destinatario');
+		const numOperacionIdx = columnIndex('Num_Operacion');
+		const montoIdx = columnIndex('Monto');
+
+		const getValue = (row: string[], index: number): string =>
+			index >= 0 ? String(row[index] || '') : '';
+
+		const parseMonto = (value: string): number => {
+			const normalized = value.replace(/,/g, '').trim();
+			return parseFloat(normalized) || 0;
+		};
 
 		return rows.map((row) => ({
-			Fecha: row[0] || '',
-			Hora: row[1] || '',
-			Banco: row[2] || '',
-			Tipo: row[3] || '',
-			Destinatario: row[4] || '',
-			Num_Operacion: row[5] || '',
-			Monto: parseFloat(row[6]) || 0,
+			Fecha: getValue(row, fechaIdx),
+			Hora: getValue(row, horaIdx),
+			Movimiento: getValue(row, movimientoIdx),
+			Concepto: getValue(row, conceptoIdx),
+			Banco: getValue(row, bancoIdx),
+			Tipo: getValue(row, tipoIdx),
+			Destinatario: getValue(row, destinatarioIdx),
+			Num_Operacion: getValue(row, numOperacionIdx),
+			Monto: parseMonto(getValue(row, montoIdx)),
 		}));
 	} catch (error) {
 		console.error('Error al obtener datos del Sheet:', error);

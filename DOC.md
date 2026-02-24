@@ -113,7 +113,6 @@ Importante: no publiques esa clave en Git n
 
 
 
-
 Usa este comando:
 npm create astro@latest mi-proyecto
 Opcional según tu gestor:
