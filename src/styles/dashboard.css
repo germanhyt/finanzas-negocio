@@ -20,7 +20,8 @@
   box-sizing: border-box;
 }
 
-html, body {
+html,
+body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background: radial-gradient(circle at top, #0f3a2b 0%, var(--bg-primary) 55%);
   color: var(--text-primary);
@@ -54,6 +55,13 @@ html, body {
 .dashboard-header .subtitle {
   color: var(--text-secondary);
   font-size: 1.1rem;
+}
+
+.dashboard-btn-transaction-container {
+  width: 100%;
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 2rem;
 }
 
 /* Date Filter */
@@ -137,6 +145,20 @@ html, body {
 
 .btn-secondary:hover {
   background: var(--border-color);
+}
+
+.btn-new-transaction {
+  margin-top: 1.5rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 700;
+  box-shadow: 0 4px 14px rgba(47, 191, 113, 0.4);
+}
+
+.plus-icon {
+  font-size: 1.5rem;
+  line-height: 1;
 }
 
 /* Stats Cards */
@@ -249,8 +271,72 @@ html, body {
 }
 
 .table-container h3 {
-  margin-bottom: 1rem;
+  margin-bottom: 0;
   font-size: 1.1rem;
+}
+
+.table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.table-filters {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.filter-select,
+.filter-search {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+  min-height: 40px;
+}
+
+.filter-select:focus,
+.filter-search:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 2px rgba(47, 191, 113, 0.2);
+}
+
+.filter-select {
+  cursor: pointer;
+  appearance: none;
+  padding-right: 2.5rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23a6c7b7' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+}
+
+.search-group {
+  position: relative;
+  min-width: 280px;
+}
+
+.filter-search {
+  width: 100%;
+  padding-right: 2.5rem;
+}
+
+.search-icon {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-secondary);
+  pointer-events: none;
+  font-size: 0.9rem;
 }
 
 .export-panel {
@@ -402,13 +488,33 @@ html, body {
 }
 
 @keyframes bell-ring {
-  0% { transform: rotate(0deg); }
-  15% { transform: rotate(14deg); }
-  30% { transform: rotate(-12deg); }
-  45% { transform: rotate(10deg); }
-  60% { transform: rotate(-8deg); }
-  75% { transform: rotate(5deg); }
-  100% { transform: rotate(0deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  15% {
+    transform: rotate(14deg);
+  }
+
+  30% {
+    transform: rotate(-12deg);
+  }
+
+  45% {
+    transform: rotate(10deg);
+  }
+
+  60% {
+    transform: rotate(-8deg);
+  }
+
+  75% {
+    transform: rotate(5deg);
+  }
+
+  100% {
+    transform: rotate(0deg);
+  }
 }
 
 .notifications-dropdown {
@@ -685,6 +791,14 @@ html, body {
   color: var(--accent-danger);
 }
 
+.no-data-cell {
+  text-align: center;
+  color: var(--text-secondary);
+  padding: 3rem !important;
+  font-style: italic;
+  font-size: 1rem;
+}
+
 .no-data {
   text-align: center;
   color: var(--text-secondary);
@@ -803,6 +917,21 @@ html, body {
 
   .table-container {
     padding: 1rem;
+  }
+
+  .table-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .table-filters {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .table-filters .filter-group,
+  .table-filters .search-group {
+    width: 100%;
   }
 
   .transacciones-table th,

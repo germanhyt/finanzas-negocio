@@ -12,6 +12,7 @@ import {
   exportarCuadreExcel,
   exportarCuadrePdf,
 } from '../lib/export';
+import { TransactionModal } from './TransactionModal';
 
 interface DashboardProps {
   initialData?: {
@@ -34,6 +35,9 @@ export function Dashboard({ initialData }: DashboardProps) {
   const [cuadreDesde, setCuadreDesde] = useState<string>('');
   const [cuadreHasta, setCuadreHasta] = useState<string>('');
   const [exporting, setExporting] = useState<'excel' | 'pdf' | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [filtroMovimiento, setFiltroMovimiento] = useState('');
+  const [filtroTexto, setFiltroTexto] = useState('');
 
   const transaccionesCuadre = useMemo(() => {
     return transacciones.filter((tx) => {
@@ -46,6 +50,23 @@ export function Dashboard({ initialData }: DashboardProps) {
   const cuadreCierreDia = useMemo(() => {
     return calcularCuadreCierreDia(transaccionesCuadre);
   }, [transaccionesCuadre]);
+
+  const transaccionesFiltradas = useMemo(() => {
+    return transacciones.filter((tx) => {
+      const movimiento = tx.Movimiento || '';
+      const cumpleMovimiento = !filtroMovimiento || movimiento.toLowerCase() === filtroMovimiento.toLowerCase();
+
+      const searchStr = filtroTexto.toLowerCase();
+      const destinatario = tx.Destinatario || '';
+      const operacion = tx.Num_Operacion || '';
+
+      const cumpleTexto = !filtroTexto ||
+        destinatario.toLowerCase().includes(searchStr) ||
+        operacion.toLowerCase().includes(searchStr);
+
+      return cumpleMovimiento && cumpleTexto;
+    });
+  }, [transacciones, filtroMovimiento, filtroTexto]);
 
   const fetchData = useCallback(async (
     options?: { silent?: boolean; desde?: string; hasta?: string }
@@ -183,6 +204,16 @@ export function Dashboard({ initialData }: DashboardProps) {
         <LatestNotifications transacciones={transacciones} />
       </header>
 
+      <div className="dashboard-btn-transaction-container">
+        <button
+          type="button"
+          className="btn btn-primary btn-new-transaction"
+          onClick={() => setIsModalOpen(true)}
+        >
+          <span className="plus-icon">+</span> Nueva Transacción
+        </button>
+      </div>
+
       <DateFilter
         fechaDesde={fechaDesde}
         fechaHasta={fechaHasta}
@@ -216,9 +247,40 @@ export function Dashboard({ initialData }: DashboardProps) {
       )}
 
       <div className="table-container">
-        <h3>Últimas Transacciones</h3>
-        <TransaccionesTable transacciones={transacciones} />
+        <div className="table-header">
+          <h3>Últimas Transacciones</h3>
+          <div className="table-filters">
+            <div className="filter-group">
+              <select
+                value={filtroMovimiento}
+                onChange={(e) => setFiltroMovimiento(e.target.value)}
+                className="filter-select"
+              >
+                <option value="">Todos los movimientos</option>
+                <option value="Ingreso">Ingreso</option>
+                <option value="Egreso">Egreso</option>
+              </select>
+            </div>
+            <div className="filter-group search-group">
+              <input
+                type="text"
+                placeholder="Buscar destinatario u operación..."
+                value={filtroTexto}
+                onChange={(e) => setFiltroTexto(e.target.value)}
+                className="filter-search"
+              />
+              {/* <span className="search-icon">🔍</span> */}
+            </div>
+          </div>
+        </div>
+        <TransaccionesTable transacciones={transaccionesFiltradas} />
       </div>
+
+      <TransactionModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSuccess={() => fetchData()}
+      />
 
       {transacciones.length > 0 && (
         <section className="export-panel">

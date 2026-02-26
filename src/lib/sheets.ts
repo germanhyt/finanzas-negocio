@@ -52,7 +52,10 @@ const getAuth = () => {
 	return new google.auth.JWT({
 		email,
 		key,
-		scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
+		scopes: [
+			'https://www.googleapis.com/auth/spreadsheets.readonly',
+			'https://www.googleapis.com/auth/spreadsheets',
+		],
 	});
 };
 
@@ -117,6 +120,49 @@ export async function getTransacciones(): Promise<Transaccion[]> {
 		}));
 	} catch (error) {
 		console.error('Error al obtener datos del Sheet:', error);
+		throw error;
+	}
+}
+
+export async function addTransaccionSheet(transaccion: Transaccion): Promise<void> {
+	const auth = getAuth();
+	const sheets = google.sheets({ version: 'v4', auth });
+	const spreadsheetId = import.meta.env.GOOGLE_SPREADSHEET_ID;
+
+	if (!spreadsheetId) {
+		throw new Error('Falta GOOGLE_SPREADSHEET_ID en variables de entorno');
+	}
+
+	// Mapear el objeto Transaccion al orden de las columnas en el Sheet
+	// Supuesto: Fecha, Hora, Movimiento, Banco, Concepto, Tipo, Destinatario, Monto, Num_Operacion
+	// Verificamos el header en getTransacciones para ser precisos:
+	// Fecha, Hora, Movimiento, Concepto, Banco, Tipo, Destinatario, Num_Operacion, Monto
+
+	const values = [
+		[
+			transaccion.Fecha,
+			transaccion.Hora,
+			transaccion.Movimiento,
+			transaccion.Concepto,
+			transaccion.Banco,
+			transaccion.Tipo,
+			transaccion.Destinatario,
+			transaccion.Num_Operacion,
+			transaccion.Monto,
+		],
+	];
+
+	try {
+		await sheets.spreadsheets.values.append({
+			spreadsheetId,
+			range: 'DB!A:I',
+			valueInputOption: 'USER_ENTERED',
+			requestBody: {
+				values,
+			},
+		});
+	} catch (error) {
+		console.error('Error al añadir transacción al Sheet:', error);
 		throw error;
 	}
 }

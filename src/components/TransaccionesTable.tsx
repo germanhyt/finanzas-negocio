@@ -22,11 +22,8 @@ export function TransaccionesTable({ transacciones }: TransaccionesTableProps) {
     return tiposEgreso.includes(tipo.toUpperCase()) ? 'tipo-egreso' : 'tipo-ingreso';
   };
 
-  if (!transacciones || transacciones.length === 0) {
-    return <p className="no-data">No hay transacciones registradas</p>;
-  }
-
   const sortedData = useMemo(() => {
+    if (!transacciones) return [];
     return [...transacciones].sort((a, b) => {
       const fechaA = `${a.Fecha}T${a.Hora}`;
       const fechaB = `${b.Fecha}T${b.Hora}`;
@@ -77,29 +74,37 @@ export function TransaccionesTable({ transacciones }: TransaccionesTableProps) {
             </tr>
           </thead>
           <tbody>
-            {displayData.map((t, index) => (
-              <tr key={t.Num_Operacion || `${t.Fecha}-${t.Hora}-${index}`}>
-                <td>{t.Fecha}</td>
-                <td>{t.Hora}</td>
-                <td>
-                  <span className="badge badge-movimiento">{t.Movimiento || '-'}</span>
+            {displayData.length > 0 ? (
+              displayData.map((t, index) => (
+                <tr key={t.Num_Operacion || `${t.Fecha}-${t.Hora}-${index}`}>
+                  <td>{t.Fecha}</td>
+                  <td>{t.Hora}</td>
+                  <td>
+                    <span className="badge badge-movimiento">{t.Movimiento || '-'}</span>
+                  </td>
+                  <td>
+                    <span className="badge badge-banco">{t.Banco}</span>
+                  </td>
+                  <td className="concepto" title={t.Concepto || ''}>{t.Concepto || '-'}</td>
+                  <td>
+                    <span className={`badge ${getTipoClass(t.Tipo || '')}`}>
+                      {(t.Tipo || '').replace('_', ' ')}
+                    </span>
+                  </td>
+                  <td className="destinatario">{t.Destinatario}</td>
+                  <td className={`monto ${getTipoClass(t.Tipo || '')}`}>
+                    {formatMoney(t.Monto)}
+                  </td>
+                  <td className="operacion">{t.Num_Operacion}</td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={9} className="no-data-cell">
+                  No se encontraron transacciones con los filtros actuales
                 </td>
-                <td>
-                  <span className="badge badge-banco">{t.Banco}</span>
-                </td>
-                <td className="concepto" title={t.Concepto || ''}>{t.Concepto || '-'}</td>
-                <td>
-                  <span className={`badge ${getTipoClass(t.Tipo)}`}>
-                    {t.Tipo.replace('_', ' ')}
-                  </span>
-                </td>
-                <td className="destinatario">{t.Destinatario}</td>
-                <td className={`monto ${getTipoClass(t.Tipo)}`}>
-                  {formatMoney(t.Monto)}
-                </td>
-                <td className="operacion">{t.Num_Operacion}</td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
       </div>
