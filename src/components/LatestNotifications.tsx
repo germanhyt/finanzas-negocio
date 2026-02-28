@@ -62,10 +62,11 @@ export function LatestNotifications({
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
   const [isBellVibrating, setIsBellVibrating] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const initializedRef = useRef(false);
   const knownOperationsRef = useRef<Set<string>>(new Set());
   const audioContextRef = useRef<AudioContext | null>(null);
-  const vibrationTimeoutRef = useRef<ReturnType<typeof window.setTimeout> | null>(null);
+  const vibrationTimeoutRef = useRef<any>(null);
 
   const getOrCreateAudioContext = () => {
     if (typeof window === 'undefined' || typeof window.AudioContext === 'undefined') {
@@ -163,6 +164,7 @@ export function LatestNotifications({
         void playNotificationSound(context).catch(() => undefined);
       }
       triggerBellVibration();
+      setUnreadCount((previousCount) => previousCount + newOperations.length);
     }
 
     newOperations.forEach((tx) => {
@@ -187,11 +189,15 @@ export function LatestNotifications({
       <button
         type="button"
         className={`notifications-bell-button ${isBellVibrating ? 'vibrating' : ''}`}
-        onClick={() => setIsOpen((previousValue) => !previousValue)}
+        onClick={() => {
+          setIsOpen((previousValue) => !previousValue);
+          setUnreadCount(0);
+        }}
         aria-expanded={isOpen}
         aria-label="Abrir notificaciones"
       >
         🔔
+        {unreadCount > 0 && <span className="notifications-badge">{unreadCount}</span>}
       </button>
 
       {isOpen && (
