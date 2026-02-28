@@ -249,14 +249,27 @@ export function TransactionModal({ isOpen, onClose, onSuccess }: TransactionModa
         }
 
         .modal-content {
-          width: 90%;
+          width: 95%;
           max-width: 600px;
+          max-height: 90vh;
           padding: 2rem;
           border-radius: 1.5rem;
           position: relative;
           color: var(--text-primary);
           border: 1px solid var(--border-color);
           box-shadow: var(--shadow);
+          overflow-y: auto;
+          scrollbar-width: thin;
+          scrollbar-color: var(--accent-primary) transparent;
+        }
+
+        .modal-content::-webkit-scrollbar {
+          width: 6px;
+        }
+
+        .modal-content::-webkit-scrollbar-thumb {
+          background-color: var(--accent-primary);
+          border-radius: 10px;
         }
 
         .glassmorphism {
@@ -468,6 +481,10 @@ export function TransactionModal({ isOpen, onClose, onSuccess }: TransactionModa
         }
 
         @media (max-width: 480px) {
+          .modal-content {
+            padding: 1.25rem;
+            border-radius: 1rem;
+          }
           .form-grid {
             grid-template-columns: 1fr;
           }
