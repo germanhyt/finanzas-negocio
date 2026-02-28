@@ -123,3 +123,8 @@ Luego entra a la carpeta y levanta el proyecto:
 
 cd mi-proyecto
 npm run dev
+
+
+
+## Instalar libreria de google
+ npm install @google/generative-ai

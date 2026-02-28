@@ -39,6 +39,22 @@ export function Dashboard({ initialData }: DashboardProps) {
   const [filtroMovimiento, setFiltroMovimiento] = useState('');
   const [filtroTexto, setFiltroTexto] = useState('');
 
+  const limitesCarga = useMemo(() => {
+    if (transacciones.length === 0) return { min: '', max: '' };
+    const fechas = transacciones.map(t => t.Fecha).filter(Boolean).sort();
+    return {
+      min: fechas[0],
+      max: fechas[fechas.length - 1]
+    };
+  }, [transacciones]);
+
+  const fueraDeRango = useMemo(() => {
+    if (!limitesCarga.min || !limitesCarga.max) return false;
+    const inicioFuera = cuadreDesde && cuadreDesde < limitesCarga.min;
+    const finFuera = cuadreHasta && cuadreHasta > limitesCarga.max;
+    return inicioFuera || finFuera;
+  }, [cuadreDesde, cuadreHasta, limitesCarga]);
+
   const transaccionesCuadre = useMemo(() => {
     return transacciones.filter((tx) => {
       if (cuadreDesde && tx.Fecha < cuadreDesde) return false;
@@ -293,6 +309,8 @@ export function Dashboard({ initialData }: DashboardProps) {
                   id="cuadre-desde"
                   type="date"
                   value={cuadreDesde}
+                  min={fechaDesde || limitesCarga.min}
+                  max={fechaHasta || limitesCarga.max}
                   onChange={(e) => setCuadreDesde(e.target.value)}
                 />
               </div>
@@ -302,6 +320,8 @@ export function Dashboard({ initialData }: DashboardProps) {
                   id="cuadre-hasta"
                   type="date"
                   value={cuadreHasta}
+                  min={fechaDesde || limitesCarga.min}
+                  max={fechaHasta || limitesCarga.max}
                   onChange={(e) => setCuadreHasta(e.target.value)}
                 />
               </div>
@@ -313,6 +333,12 @@ export function Dashboard({ initialData }: DashboardProps) {
                 Limpiar rango
               </button>
             </div>
+
+            {fueraDeRango && (
+              <p className="cuadre-warning">
+                ⚠️ Ajusta el filtro general (arriba) para ver más días.
+              </p>
+            )}
 
             {cuadreCierreDia ? (
               <>

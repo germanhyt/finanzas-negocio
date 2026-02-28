@@ -43,21 +43,22 @@ export function calcularCuadreCierreDia(transacciones: Transaccion[]): CuadreCie
     return null;
   }
 
-  const fechaCierre = [...transacciones]
+  // Encontrar el rango de fechas en el set de transacciones
+  const fechas = transacciones
     .map((tx) => tx.Fecha)
     .filter(Boolean)
-    .sort((a, b) => b.localeCompare(a))[0];
+    .sort((a, b) => a.localeCompare(b));
 
-  if (!fechaCierre) {
-    return null;
-  }
-
-  const transaccionesDelDia = transacciones.filter((tx) => tx.Fecha === fechaCierre);
+  const primeraFecha = fechas[0];
+  const ultimaFecha = fechas[fechas.length - 1];
+  const rangoTexto = primeraFecha === ultimaFecha
+    ? primeraFecha
+    : `${primeraFecha} al ${ultimaFecha}`;
 
   let ingresos = 0;
   let egresos = 0;
 
-  transaccionesDelDia.forEach((tx) => {
+  transacciones.forEach((tx) => {
     const monto = Number(tx.Monto || 0);
     if (clasificarTransaccion(tx.Tipo) === 'egreso') {
       egresos += monto;
@@ -67,11 +68,11 @@ export function calcularCuadreCierreDia(transacciones: Transaccion[]): CuadreCie
   });
 
   return {
-    fecha: fechaCierre,
+    fecha: rangoTexto,
     ingresos,
     egresos,
     balance: ingresos - egresos,
-    totalTransacciones: transaccionesDelDia.length,
+    totalTransacciones: transacciones.length,
   };
 }
 
