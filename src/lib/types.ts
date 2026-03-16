@@ -9,7 +9,16 @@ export interface Transaccion {
   Destinatario: string;
   Num_Operacion: string;
   Monto: number;
+  Categoria?: string;
 }
+
+export interface Presupuesto {
+  ID: string;
+  Mes_Anio: string;
+  Categoria: string;
+  Monto_Presupuestado: number;
+}
+
 
 export interface ResumenFinanciero {
   totalIngresos: number;
@@ -18,7 +27,20 @@ export interface ResumenFinanciero {
   transaccionesPorDia: { fecha: string; ingresos: number; egresos: number }[];
   transaccionesPorTipo: { tipo: string; monto: number; count: number }[];
   transaccionesPorBanco: { banco: string; monto: number; count: number }[];
+  presupuestos: PresupuestoEstado[];
 }
+
+export interface PresupuestoEstado {
+  id?: string;
+  mesAnio: string;
+  categoria: string;
+  presupuestado: number;
+  real: number;
+  porcentaje: number;
+  diferencia: number;
+}
+
+
 
 export interface WebhookPayload {
   fecha: string;

@@ -121,31 +121,44 @@ body {
 /* Buttons */
 .btn {
   padding: 0.75rem 1.5rem;
-  border: none;
+  border: 1px solid transparent;
   border-radius: 8px;
   font-size: 1rem;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
+  font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
+
 
 .btn-primary {
   background: var(--accent-primary);
-  color: #032013;
+  color: #04170f;
+  box-shadow: 0 4px 12px rgba(47, 191, 113, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .btn-primary:hover {
-  background: #45d384;
+  background: var(--accent-success);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(47, 191, 113, 0.35);
 }
 
 .btn-secondary {
-  background: var(--bg-card);
+  background: rgba(255, 255, 255, 0.05);
   color: var(--text-primary);
+  border: 1px solid var(--border-color);
 }
 
 .btn-secondary:hover {
-  background: var(--border-color);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--accent-primary);
+  transform: translateY(-1px);
 }
+
 
 .btn-new-transaction {
   margin-top: 1.5rem;
@@ -992,3 +1005,386 @@ body {
     gap: 0.5rem;
   }
 }
+
+/* Budget Progress Styles */
+.budget-progress-container {
+  padding: 0.5rem 0;
+}
+
+.budget-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 1.25rem;
+}
+
+.budget-item {
+  background: rgba(255, 255, 255, 0.03);
+  padding: 1.5rem;
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+}
+
+.budget-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.budget-category {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.budget-values {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.progress-bar-bg {
+  width: 100%;
+  height: 8px;
+  background: var(--bg-primary);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 0.75rem;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.budget-item-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+}
+
+.budget-percentage {
+  color: var(--text-secondary);
+}
+
+.budget-diff {
+  font-weight: 600;
+}
+
+.text-danger {
+  color: var(--accent-danger);
+}
+
+.text-success {
+  color: var(--accent-success);
+}
+
+.budget-empty {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-secondary);
+  background: var(--bg-card);
+  border-radius: 12px;
+  border: 1px dashed var(--border-color);
+}
+
+/* Modal Shared Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex !important;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000; /* Incrementado */
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  padding: 1rem;
+  animation: modalFadeIn 0.2s ease-out;
+}
+
+/* Fix para modales anidados (Editores sobre Visores) */
+.modal-overlay .modal-overlay {
+  z-index: 30000; /* Mucho más alto para evitar traslape */
+  background: rgba(0, 0, 0, 0.6); /* Más oscuro para tapar el de atrás */
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+
+
+.glassmorphism {
+  background: rgba(11, 43, 31, 0.96) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(47, 191, 113, 0.3);
+}
+
+
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal-content {
+  width: 95%;
+  max-width: 1000px;
+  max-height: 90vh;
+  padding: 2rem;
+  border-radius: 1.5rem;
+  position: relative;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+  overflow-y: auto;
+  color: var(--text-primary);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  background: linear-gradient(to right, var(--accent-success), var(--accent-primary));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 2rem;
+  cursor: pointer;
+  line-height: 1;
+  transition: all 0.2s;
+}
+
+.close-btn:hover {
+  color: var(--accent-danger);
+  transform: scale(1.1);
+}
+
+/* Modals & Forms Styles */
+.title-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ocr-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.ocr-buttons {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-ocr {
+  background: rgba(47, 191, 113, 0.1);
+  color: var(--accent-success);
+  border: 1px solid var(--accent-success);
+  padding: 0.5rem 0.8rem;
+  border-radius: 0.75rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.btn-ocr.secondary {
+  background: rgba(110, 231, 164, 0.05);
+  border-style: dashed;
+}
+
+.btn-ocr:hover:not(.loading) {
+  background: rgba(47, 191, 113, 0.2);
+  transform: translateY(-1px);
+}
+
+.ocr-status-text {
+  font-size: 0.8rem;
+  color: var(--accent-success);
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.6; }
+  50% { opacity: 1; }
+  100% { opacity: 0.6; }
+}
+
+.btn-ocr.loading {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.form-type-toggle {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  background: var(--bg-primary);
+  padding: 0.4rem;
+  border-radius: 1rem;
+  border: 1px solid var(--border-color);
+}
+
+.toggle-btn {
+  flex: 1;
+  padding: 1.15rem; /* Aumentado para mejor tacto */
+  border: none;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+.toggle-btn.ingreso.active {
+  background: var(--accent-success);
+  color: #032013;
+  box-shadow: 0 4px 12px rgba(110, 231, 164, 0.2);
+}
+
+.toggle-btn.egreso.active {
+  background: var(--accent-danger);
+  color: white;
+  box-shadow: 0 4px 12px rgba(255, 122, 122, 0.2);
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.full-width {
+  grid-column: span 2;
+}
+
+.modal-content input, 
+.modal-content select {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  padding: 0.85rem;
+  border-radius: 0.75rem;
+  color: var(--text-primary);
+  outline: none;
+  transition: border-color 0.3s;
+  font-size: 1rem;
+}
+
+.modal-content input:focus, 
+.modal-content select:focus {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 2px rgba(47, 191, 113, 0.1);
+}
+
+.form-error {
+  padding: 0.75rem;
+  background: rgba(255, 122, 122, 0.1);
+  border: 1px solid var(--accent-danger);
+  color: var(--accent-danger);
+  border-radius: 0.75rem;
+  margin-top: 1.25rem;
+  font-size: 0.875rem;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+@media (max-width: 480px) {
+  .modal-content {
+    padding: 1.5rem 1.25rem;
+    width: 98%;
+  }
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+  .full-width {
+    grid-column: span 1;
+  }
+}
+
+/* Budget Viewer Specific */
+.budget-viewer-modal {
+  max-width: 1100px !important;
+}
+
+.budget-date-badge {
+  font-size: 0.75rem;
+  background: var(--bg-primary);
+  color: var(--accent-success);
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid rgba(110, 231, 164, 0.2);
+  font-weight: 500;
+  margin-left: 0.5rem;
+}
+
+.budget-viewer-list {
+  max-height: 60vh;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+
+.budget-viewer-list::-webkit-scrollbar {
+  width: 5px;
+}
+
+.budget-viewer-list::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 10px;
+}
+
+.budget-management-actions {
+  margin-bottom: 1.5rem;
+}
+
+.btn-edit-budget {
+  background: none;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  padding: 0.35rem 0.65rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 0.5rem;
+}
+
+.btn-edit-budget:hover {
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+  background: rgba(47, 191, 113, 0.1);
+}
+

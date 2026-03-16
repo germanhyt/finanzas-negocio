@@ -1,14 +1,22 @@
 import type { APIRoute } from 'astro';
-import { getTransacciones, getTransaccionesPorFecha } from '../../../lib/sheets';
-import { calcularResumen } from '../../../lib/analytics';
+import { getTransacciones, getTransaccionesPorFecha, getPresupuestos } from '../../../lib/sheets';
+import { calcularResumen, verificarYEnviarAlertas } from '../../../lib/analytics';
+
 
 export const GET: APIRoute = async ({ url }) => {
   try {
     const fechaInicio = url.searchParams.get('desde') || undefined;
     const fechaFin = url.searchParams.get('hasta') || undefined;
 
-    const transacciones = await getTransaccionesPorFecha(fechaInicio, fechaFin);
-    const resumen = calcularResumen(transacciones);
+    const [transacciones, presupuestos] = await Promise.all([
+      getTransaccionesPorFecha(fechaInicio, fechaFin),
+      getPresupuestos(),
+    ]);
+    const resumen = calcularResumen(transacciones, presupuestos);
+
+    // Ejecutar verificación de alertas sin bloquear la respuesta
+    void verificarYEnviarAlertas(resumen.presupuestos);
+
 
     return new Response(
       JSON.stringify({

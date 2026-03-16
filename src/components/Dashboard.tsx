@@ -13,6 +13,10 @@ import {
   exportarCuadrePdf,
 } from '../lib/export';
 import { TransactionModal } from './TransactionModal';
+import { BudgetViewerModal } from './BudgetViewerModal';
+import { BudgetModal } from './BudgetModal';
+
+
 
 interface DashboardProps {
   initialData?: {
@@ -36,7 +40,11 @@ export function Dashboard({ initialData }: DashboardProps) {
   const [cuadreHasta, setCuadreHasta] = useState<string>('');
   const [exporting, setExporting] = useState<'excel' | 'pdf' | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isBudgetViewerOpen, setIsBudgetViewerOpen] = useState(false);
+  const [isBudgetEditOpen, setIsBudgetEditOpen] = useState(false);
+  const [selectedBudget, setSelectedBudget] = useState<any>(null);
   const [filtroMovimiento, setFiltroMovimiento] = useState('');
+
   const [filtroTexto, setFiltroTexto] = useState('');
 
   const limitesCarga = useMemo(() => {
@@ -220,15 +228,33 @@ export function Dashboard({ initialData }: DashboardProps) {
         <LatestNotifications transacciones={transacciones} />
       </header>
 
-      <div className="dashboard-btn-transaction-container">
+      <div className="dashboard-btn-transaction-container" style={{ gap: '1rem', flexWrap: 'wrap', display: 'flex', justifyContent: 'flex-end', marginBottom: '2rem' }}>
+        <button
+          type="button"
+          className="btn btn-secondary btn-new-transaction"
+          style={{ 
+            background: 'var(--bg-card)', 
+            border: '1px solid var(--accent-primary)', 
+            color: 'var(--accent-primary)',
+            margin: 0,
+            display: 'flex',
+            alignItems: 'center'
+          }}
+          onClick={() => setIsBudgetViewerOpen(true)}
+        >
+          📊 Ver Presupuesto
+        </button>
         <button
           type="button"
           className="btn btn-primary btn-new-transaction"
+          style={{ margin: 0 }}
           onClick={() => setIsModalOpen(true)}
         >
           <span className="plus-icon">+</span> Nueva Transacción
         </button>
       </div>
+
+
 
       <DateFilter
         fechaDesde={fechaDesde}
@@ -254,11 +280,15 @@ export function Dashboard({ initialData }: DashboardProps) {
               <TiposPieChart data={resumen.transaccionesPorTipo} />
             </div>
 
+
+
+
             <div className="chart-container chart-full-width">
               <h3>Tendencia por Hora (Ingresos y Egresos)</h3>
               <TendenciaHoraChart transacciones={transacciones} />
             </div>
           </div>
+
         </>
       )}
 
@@ -297,6 +327,34 @@ export function Dashboard({ initialData }: DashboardProps) {
         onClose={() => setIsModalOpen(false)}
         onSuccess={() => fetchData()}
       />
+
+      {resumen && (
+        <BudgetViewerModal
+          isOpen={isBudgetViewerOpen}
+          onClose={() => setIsBudgetViewerOpen(false)}
+          presupuestos={resumen.presupuestos}
+          onRefresh={() => fetchData()}
+          onEditBudget={(budget) => {
+            setSelectedBudget(budget);
+            setIsBudgetEditOpen(true);
+          }}
+          onAddBudget={() => {
+            setSelectedBudget(null);
+            setIsBudgetEditOpen(true);
+          }}
+        />
+      )}
+
+      <BudgetModal 
+        isOpen={isBudgetEditOpen}
+        onClose={() => setIsBudgetEditOpen(false)}
+        onSuccess={() => {
+          fetchData();
+        }}
+        initialData={selectedBudget}
+      />
+
+
 
       {transacciones.length > 0 && (
         <section className="export-panel">

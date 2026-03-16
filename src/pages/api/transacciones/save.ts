@@ -24,7 +24,9 @@ export const POST: APIRoute = async ({ request }) => {
             Destinatario: data.Destinatario || 'Varios',
             Num_Operacion: data.Num_Operacion || 'S/N',
             Monto: Number(data.Monto),
+            Categoria: data.Categoria || 'Otros',
         };
+
 
         await addTransaccionSheet(transaccion);
 

@@ -1,4 +1,4 @@
-import type { Transaccion, ResumenFinanciero } from './types';
+import type { Transaccion, ResumenFinanciero, Presupuesto, PresupuestoEstado } from './types';
 import { parseISO, startOfMonth, endOfMonth } from 'date-fns';
 
 // Tipos de operación que se consideran egresos
@@ -8,7 +8,10 @@ export function clasificarTransaccion(tipo: string): 'ingreso' | 'egreso' {
   return TIPOS_EGRESO.includes(tipo.toUpperCase()) ? 'egreso' : 'ingreso';
 }
 
-export function calcularResumen(transacciones: Transaccion[]): ResumenFinanciero {
+export function calcularResumen(
+  transacciones: Transaccion[],
+  presupuestosDef: Presupuesto[] = []
+): ResumenFinanciero {
   let totalIngresos = 0;
   let totalEgresos = 0;
 
@@ -79,8 +82,73 @@ export function calcularResumen(transacciones: Transaccion[]): ResumenFinanciero
     transaccionesPorDia,
     transaccionesPorTipo,
     transaccionesPorBanco,
+    presupuestos: calcularEstadoPresupuesto(transacciones, presupuestosDef),
   };
 }
+
+
+export async function verificarYEnviarAlertas(presupuestos: PresupuestoEstado[]) {
+  const WEBHOOK_URL = import.meta.env.WEBHOOK_NOTIFICATION;
+
+  if (!WEBHOOK_URL) return;
+
+  for (const p of presupuestos) {
+    // Alerta al 80% y 100%
+    if (p.porcentaje >= 80 && p.porcentaje < 85) {
+      await enviarAlerta(WEBHOOK_URL, p, 'ADVERTENCIA (80%)');
+    } else if (p.porcentaje >= 100 && p.porcentaje < 105) {
+      await enviarAlerta(WEBHOOK_URL, p, 'LIMITE ALCANZADO (100%)');
+    }
+  }
+}
+
+async function enviarAlerta(url: string, p: PresupuestoEstado, tipo: string) {
+  try {
+    await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        alerta: tipo,
+        categoria: p.categoria,
+        presupuestado: p.presupuestado,
+        real: p.real,
+        porcentaje: p.porcentaje,
+        diferencia: p.diferencia
+      })
+    });
+  } catch (e) {
+    console.error('Error enviando alerta a n8n:', e);
+  }
+}
+
+
+export function calcularEstadoPresupuesto(
+  transacciones: Transaccion[],
+  presupuestosDef: Presupuesto[]
+): PresupuestoEstado[] {
+  return presupuestosDef.map((p) => {
+    // Filtrar transacciones que coincidan con la categoría Y el mes/año del presupuesto
+    const real = transacciones
+      .filter((t) => {
+        const esEgreso = clasificarTransaccion(t.Tipo) === 'egreso';
+        const mismaCategoria = (t.Categoria || 'Otros') === p.Categoria;
+        const mismoMes = t.Fecha.startsWith(p.Mes_Anio); // p.Mes_Anio es YYYY-MM
+        return esEgreso && mismaCategoria && mismoMes;
+      })
+      .reduce((sum, t) => sum + t.Monto, 0);
+
+    return {
+      id: p.ID,
+      mesAnio: p.Mes_Anio,
+      categoria: p.Categoria,
+      presupuestado: p.Monto_Presupuestado,
+      real,
+      porcentaje: p.Monto_Presupuestado > 0 ? (real / p.Monto_Presupuestado) * 100 : 0,
+      diferencia: p.Monto_Presupuestado - real,
+    };
+  });
+}
+
 
 export function filtrarPorMes(
   transacciones: Transaccion[],

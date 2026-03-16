@@ -1,6 +1,6 @@
 import { google } from 'googleapis';
 import { createPrivateKey } from 'node:crypto';
-import type { Transaccion } from './types';
+import type { Transaccion, Presupuesto } from './types';
 
 function normalizePrivateKey(rawKey: string): string {
 	const withoutQuotes = rawKey
@@ -98,6 +98,8 @@ export async function getTransacciones(): Promise<Transaccion[]> {
 		const destinatarioIdx = columnIndex('Destinatario');
 		const numOperacionIdx = columnIndex('Num_Operacion');
 		const montoIdx = columnIndex('Monto');
+		const categoriaIdx = columnIndex('Categoria');
+
 
 		const getValue = (row: string[], index: number): string =>
 			index >= 0 ? String(row[index] || '') : '';
@@ -117,7 +119,9 @@ export async function getTransacciones(): Promise<Transaccion[]> {
 			Destinatario: getValue(row, destinatarioIdx),
 			Num_Operacion: getValue(row, numOperacionIdx),
 			Monto: parseMonto(getValue(row, montoIdx)),
+			Categoria: getValue(row, categoriaIdx),
 		}));
+
 	} catch (error) {
 		console.error('Error al obtener datos del Sheet:', error);
 		throw error;
@@ -149,13 +153,15 @@ export async function addTransaccionSheet(transaccion: Transaccion): Promise<voi
 			transaccion.Destinatario,
 			transaccion.Num_Operacion,
 			transaccion.Monto,
+			transaccion.Categoria || '',
 		],
+
 	];
 
 	try {
 		await sheets.spreadsheets.values.append({
 			spreadsheetId,
-			range: 'DB!A:I',
+			range: 'DB!A:J',
 			valueInputOption: 'USER_ENTERED',
 			requestBody: {
 				values,
@@ -184,3 +190,147 @@ export async function getTransaccionesPorFecha(
 		return fecha >= inicio && fecha <= fin;
 	});
 }
+
+export async function getPresupuestos(): Promise<Presupuesto[]> {
+	const auth = getAuth();
+	const sheets = google.sheets({ version: 'v4', auth });
+	const spreadsheetId = import.meta.env.GOOGLE_SPREADSHEET_ID;
+
+	if (!spreadsheetId) {
+		throw new Error('Falta GOOGLE_SPREADSHEET_ID en variables de entorno');
+	}
+
+	try {
+		const response = await sheets.spreadsheets.values.get({
+			spreadsheetId,
+			range: 'Presupuesto!A1:Z',
+		});
+
+		const values = response.data.values || [];
+
+		if (values.length === 0) {
+			return [];
+		}
+
+		const [headerRow, ...rows] = values;
+
+		const normalizedHeaders = (headerRow || []).map((header) =>
+			String(header || '').trim().toUpperCase()
+		);
+
+		const columnIndex = (columnName: string) =>
+			normalizedHeaders.indexOf(columnName.toUpperCase());
+
+		const idIdx = columnIndex('ID');
+		const mesAnioIdx = columnIndex('Mes_Anio');
+		const categoriaIdx = columnIndex('Categoria');
+		const montoIdx = columnIndex('Monto_Presupuestado');
+
+		const getValue = (row: string[], index: number): string =>
+			index >= 0 ? String(row[index] || '') : '';
+
+		const parseMonto = (value: string): number => {
+			const normalized = value.replace(/,/g, '').trim();
+			return parseFloat(normalized) || 0;
+		};
+
+		return rows.map((row) => ({
+			ID: getValue(row, idIdx),
+			Mes_Anio: getValue(row, mesAnioIdx),
+			Categoria: getValue(row, categoriaIdx),
+			Monto_Presupuestado: parseMonto(getValue(row, montoIdx)),
+		}));
+	} catch (error) {
+		console.error('Error al obtener presupuestos del Sheet:', error);
+		throw error;
+	}
+}
+
+export async function addPresupuestoSheet(presupuesto: Presupuesto): Promise<void> {
+	const auth = getAuth();
+	const sheets = google.sheets({ version: 'v4', auth });
+	const spreadsheetId = import.meta.env.GOOGLE_SPREADSHEET_ID;
+
+	const values = [
+		[
+			presupuesto.ID || `PRES-${Date.now()}`,
+			presupuesto.Mes_Anio,
+			presupuesto.Categoria,
+			presupuesto.Monto_Presupuestado,
+		],
+	];
+
+	await sheets.spreadsheets.values.append({
+		spreadsheetId,
+		range: 'Presupuesto!A:D',
+		valueInputOption: 'USER_ENTERED',
+		requestBody: { values },
+	});
+}
+
+export async function updatePresupuestoSheet(presupuesto: Presupuesto): Promise<void> {
+	const auth = getAuth();
+	const sheets = google.sheets({ version: 'v4', auth });
+	const spreadsheetId = import.meta.env.GOOGLE_SPREADSHEET_ID;
+
+	// OJO: En Google Sheets no hay un "UPDATE WHERE ID=x" directo fácil con la API de values.
+	// Una forma sencilla es leer todo, encontrar el índice de la fila y luego escribir en esa celda/rango.
+	const response = await sheets.spreadsheets.values.get({
+		spreadsheetId,
+		range: 'Presupuesto!A:A',
+	});
+	const ids = response.data.values || [];
+	const rowIndex = ids.findIndex((row) => row[0] === presupuesto.ID);
+
+	if (rowIndex === -1) throw new Error('Presupuesto no encontrado');
+
+	const rowNum = rowIndex + 1;
+	await sheets.spreadsheets.values.update({
+		spreadsheetId,
+		range: `Presupuesto!A${rowNum}:D${rowNum}`,
+		valueInputOption: 'USER_ENTERED',
+		requestBody: {
+			values: [[presupuesto.ID, presupuesto.Mes_Anio, presupuesto.Categoria, presupuesto.Monto_Presupuestado]],
+		},
+	});
+}
+
+export async function deletePresupuestoSheet(id: string): Promise<void> {
+	const auth = getAuth();
+	const sheets = google.sheets({ version: 'v4', auth });
+	const spreadsheetId = import.meta.env.GOOGLE_SPREADSHEET_ID;
+
+	const response = await sheets.spreadsheets.values.get({
+		spreadsheetId,
+		range: 'Presupuesto!A:A',
+	});
+	const ids = response.data.values || [];
+	const rowIndex = ids.findIndex((row) => row[0] === id);
+
+	if (rowIndex === -1) throw new Error('Presupuesto no encontrado');
+
+	const rowNum = rowIndex + 1;
+	// Para borrar realmente la fila necesitamos batchUpdate de la hoja
+	const sheetInfo = await sheets.spreadsheets.get({ spreadsheetId });
+	const sheet = sheetInfo.data.sheets?.find((s) => s.properties?.title === 'Presupuesto');
+	const sheetId = sheet?.properties?.sheetId;
+
+	await sheets.spreadsheets.batchUpdate({
+		spreadsheetId,
+		requestBody: {
+			requests: [
+				{
+					deleteDimension: {
+						range: {
+							sheetId,
+							dimension: 'ROWS',
+							startIndex: rowIndex,
+							endIndex: rowNum,
+						},
+					},
+				},
+			],
+		},
+	});
+}
+

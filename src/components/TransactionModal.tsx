@@ -20,7 +20,9 @@ export function TransactionModal({ isOpen, onClose, onSuccess }: TransactionModa
     Destinatario: '',
     Monto: '',
     Num_Operacion: '',
+    Categoria: 'Otros',
   });
+
 
   const handleOcrUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -54,7 +56,9 @@ export function TransactionModal({ isOpen, onClose, onSuccess }: TransactionModa
           Destinatario: data.Destinatario || prev.Destinatario,
           Monto: data.Monto?.toString() || prev.Monto,
           Num_Operacion: data.Num_Operacion || prev.Num_Operacion,
+          Categoria: data.Categoria || prev.Categoria,
         }));
+
       } else {
         setError(result.error || 'No se pudo leer el voucher. Intenta manualmente.');
       }
@@ -209,6 +213,21 @@ export function TransactionModal({ isOpen, onClose, onSuccess }: TransactionModa
               <label>Operación</label>
               <input type="text" name="Num_Operacion" value={formData.Num_Operacion} onChange={handleChange} placeholder="Num. Operación" />
             </div>
+            <div className="form-group">
+              <label>Categoría</label>
+              <select name="Categoria" value={formData.Categoria} onChange={handleChange}>
+                <option value="Vivienda">Vivienda</option>
+                <option value="Alimentación">Alimentación</option>
+                <option value="Transporte">Transporte</option>
+                <option value="Salud">Salud</option>
+                <option value="Servicios">Servicios</option>
+                <option value="Entretenimiento">Entretenimiento</option>
+                <option value="Educación">Educación</option>
+                <option value="Personal">Personal</option>
+                <option value="Otros">Otros</option>
+              </select>
+            </div>
+
             <div className="form-group full-width">
               <label>Concepto</label>
               <input type="text" name="Concepto" value={formData.Concepto} onChange={handleChange} placeholder="Ej: Pago de servicios" />
@@ -232,267 +251,7 @@ export function TransactionModal({ isOpen, onClose, onSuccess }: TransactionModa
         </form>
       </div>
 
-      <style>{`
-        .modal-overlay {
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: rgba(0, 0, 0, 0.8);
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          z-index: 1000;
-          backdrop-filter: blur(8px);
-          animation: fadeIn 0.3s ease;
-        }
-
-        .modal-content {
-          width: 95%;
-          max-width: 600px;
-          max-height: 90vh;
-          padding: 2rem;
-          border-radius: 1.5rem;
-          position: relative;
-          color: var(--text-primary);
-          border: 1px solid var(--border-color);
-          box-shadow: var(--shadow);
-          overflow-y: auto;
-          scrollbar-width: thin;
-          scrollbar-color: var(--accent-primary) transparent;
-        }
-
-        .modal-content::-webkit-scrollbar {
-          width: 6px;
-        }
-
-        .modal-content::-webkit-scrollbar-thumb {
-          background-color: var(--accent-primary);
-          border-radius: 10px;
-        }
-
-        .glassmorphism {
-          background: var(--bg-secondary);
-          opacity: 0.98;
-        }
-
-        .modal-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 2rem;
-        }
-
-        .modal-header h2 {
-          margin: 0;
-          font-size: 1.5rem;
-          background: linear-gradient(to right, var(--accent-success), var(--accent-primary));
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-        }
-
-        .title-section {
-          display: flex;
-          flex-direction: column;
-          gap: 0.5rem;
-        }
-
-        .ocr-actions {
-          display: flex;
-          align-items: center;
-          gap: 0.75rem;
-        }
-
-        .ocr-buttons {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-        }
-
-        .btn-ocr {
-          background: rgba(47, 191, 113, 0.1);
-          color: var(--accent-success);
-          border: 1px solid var(--accent-success);
-          padding: 0.5rem 0.8rem;
-          border-radius: 0.75rem;
-          font-size: 0.85rem;
-          cursor: pointer;
-          transition: all 0.2s;
-          font-weight: 600;
-          display: flex;
-          align-items: center;
-          gap: 0.4rem;
-        }
-
-        .btn-ocr.secondary {
-          background: rgba(110, 231, 164, 0.05);
-          border-style: dashed;
-        }
-
-        .btn-ocr:hover:not(.loading) {
-          background: rgba(47, 191, 113, 0.2);
-          transform: translateY(-1px);
-        }
-
-        .ocr-status-text {
-          font-size: 0.8rem;
-          color: var(--accent-success);
-          animation: pulse 1.5s infinite;
-        }
-
-        @keyframes pulse {
-          0% { opacity: 0.6; }
-          50% { opacity: 1; }
-          100% { opacity: 0.6; }
-        }
-
-        .btn-ocr.loading {
-          opacity: 0.7;
-          cursor: wait;
-        }
-
-        .close-btn {
-          background: none;
-          border: none;
-          color: var(--text-secondary);
-          font-size: 2rem;
-          cursor: pointer;
-          line-height: 1;
-        }
-
-        .form-type-toggle {
-          display: flex;
-          gap: 1rem;
-          margin-bottom: 2rem;
-          background: var(--bg-primary);
-          padding: 0.4rem;
-          border-radius: 1rem;
-          border: 1px solid var(--border-color);
-        }
-
-        .toggle-btn {
-          flex: 1;
-          padding: 0.8rem;
-          border: none;
-          border-radius: 0.75rem;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.3s ease;
-          background: transparent;
-          color: var(--text-secondary);
-        }
-
-        .toggle-btn.ingreso.active {
-          background: var(--accent-success);
-          color: #032013;
-          box-shadow: 0 4px 12px rgba(110, 231, 164, 0.2);
-        }
-
-        .toggle-btn.egreso.active {
-          background: var(--accent-danger);
-          color: white;
-          box-shadow: 0 4px 12px rgba(255, 122, 122, 0.2);
-        }
-
-        .form-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 1.25rem;
-        }
-
-        .form-group {
-          display: flex;
-          flex-direction: column;
-          gap: 0.5rem;
-        }
-
-        .full-width {
-          grid-column: span 2;
-        }
-
-        label {
-          font-size: 0.875rem;
-          color: var(--text-secondary);
-        }
-
-        .modal-content input, .modal-content select {
-          background: var(--bg-primary);
-          border: 1px solid var(--border-color);
-          padding: 0.75rem;
-          border-radius: 0.75rem;
-          color: var(--text-primary);
-          outline: none;
-          transition: border-color 0.3s;
-        }
-
-        .modal-content input:focus, .modal-content select:focus {
-          border-color: var(--accent-primary);
-        }
-
-        .form-error {
-          padding: 0.75rem;
-          background: rgba(255, 122, 122, 0.1);
-          border: 1px solid var(--accent-danger);
-          color: var(--accent-danger);
-          border-radius: 0.75rem;
-          margin-top: 1.25rem;
-          font-size: 0.875rem;
-        }
-
-        .form-actions {
-          display: flex;
-          justify-content: flex-end;
-          gap: 1rem;
-          margin-top: 2rem;
-        }
-
-        .btn-primary, .btn-secondary {
-          padding: 0.75rem 1.5rem;
-          border-radius: 0.75rem;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.3s;
-        }
-
-        .transaction-form .btn-primary {
-          background: var(--accent-primary);
-          color: #032013;
-          border: none;
-        }
-
-        .transaction-form .btn-primary:hover {
-          background: #45d384;
-        }
-
-        .transaction-form .btn-secondary {
-          background: var(--bg-card);
-          border: 1px solid var(--border-color);
-          color: var(--text-primary);
-        }
-
-        .transaction-form .btn-secondary:hover {
-          background: var(--border-color);
-        }
-
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-
-        @media (max-width: 480px) {
-          .modal-content {
-            padding: 1.25rem;
-            border-radius: 1rem;
-          }
-          .form-grid {
-            grid-template-columns: 1fr;
-          }
-          .full-width {
-            grid-column: span 1;
-          }
-        }
-      `}</style>
     </div>
   );
 }
+
