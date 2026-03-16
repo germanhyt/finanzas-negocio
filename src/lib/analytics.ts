@@ -1,11 +1,10 @@
 import type { Transaccion, ResumenFinanciero, Presupuesto, PresupuestoEstado } from './types';
 import { parseISO, startOfMonth, endOfMonth } from 'date-fns';
+import { MOVIMIENTO, TIPOS_EGRESO, CATEGORIA, ALERTAS } from './constants';
 
-// Tipos de operación que se consideran egresos
-const TIPOS_EGRESO = ['PAGO_QR', 'YAPEO_CELULAR', 'PAGO_SERVICIO', 'TRANSFERENCIA'];
-
-export function clasificarTransaccion(tipo: string): 'ingreso' | 'egreso' {
-  return TIPOS_EGRESO.includes(tipo.toUpperCase()) ? 'egreso' : 'ingreso';
+export function clasificarTransaccion(tipo: string, movimiento?: string): 'ingreso' | 'egreso' {
+  if (movimiento) return movimiento === MOVIMIENTO.EGRESO ? 'egreso' : 'ingreso';
+  return TIPOS_EGRESO.includes(tipo.toUpperCase() as any) ? 'egreso' : 'ingreso';
 }
 
 export function calcularResumen(
@@ -17,7 +16,7 @@ export function calcularResumen(
 
   // Calcular totales
   transacciones.forEach((t) => {
-    if (clasificarTransaccion(t.Tipo) === 'egreso') {
+    if (clasificarTransaccion(t.Tipo, t.Movimiento) === 'egreso') {
       totalEgresos += t.Monto;
     } else {
       totalIngresos += t.Monto;
@@ -32,7 +31,7 @@ export function calcularResumen(
       porDia.set(fecha, { ingresos: 0, egresos: 0 });
     }
     const dia = porDia.get(fecha)!;
-    if (clasificarTransaccion(t.Tipo) === 'egreso') {
+    if (clasificarTransaccion(t.Tipo, t.Movimiento) === 'egreso') {
       dia.egresos += t.Monto;
     } else {
       dia.ingresos += t.Monto;
@@ -95,9 +94,9 @@ export async function verificarYEnviarAlertas(presupuestos: PresupuestoEstado[])
   for (const p of presupuestos) {
     // Alerta al 80% y 100%
     if (p.porcentaje >= 80 && p.porcentaje < 85) {
-      await enviarAlerta(WEBHOOK_URL, p, 'ADVERTENCIA (80%)');
+      await enviarAlerta(WEBHOOK_URL, p, ALERTAS.ADVERTENCIA);
     } else if (p.porcentaje >= 100 && p.porcentaje < 105) {
-      await enviarAlerta(WEBHOOK_URL, p, 'LIMITE ALCANZADO (100%)');
+      await enviarAlerta(WEBHOOK_URL, p, ALERTAS.LIMITE_ALCANZADO);
     }
   }
 }
@@ -130,8 +129,8 @@ export function calcularEstadoPresupuesto(
     // Filtrar transacciones que coincidan con la categoría Y el mes/año del presupuesto
     const real = transacciones
       .filter((t) => {
-        const esEgreso = clasificarTransaccion(t.Tipo) === 'egreso';
-        const mismaCategoria = (t.Categoria || 'Otros') === p.Categoria;
+        const esEgreso = clasificarTransaccion(t.Tipo, t.Movimiento) === 'egreso';
+        const mismaCategoria = (t.Categoria || CATEGORIA.OTROS) === p.Categoria;
         const mismoMes = t.Fecha.startsWith(p.Mes_Anio); // p.Mes_Anio es YYYY-MM
         return esEgreso && mismaCategoria && mismoMes;
       })

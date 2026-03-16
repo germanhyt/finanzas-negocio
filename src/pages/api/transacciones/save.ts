@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { addTransaccionSheet } from '../../../lib/sheets';
 import type { Transaccion } from '../../../lib/types';
+import { TIPO_TRANSACCION, CATEGORIA } from '../../../lib/constants';
 
 export const POST: APIRoute = async ({ request }) => {
     try {
@@ -20,11 +21,11 @@ export const POST: APIRoute = async ({ request }) => {
             Movimiento: data.Movimiento,
             Concepto: data.Concepto || 'Sin concepto',
             Banco: data.Banco,
-            Tipo: data.Tipo || 'OTROS',
+            Tipo: data.Tipo || TIPO_TRANSACCION.OTROS,
             Destinatario: data.Destinatario || 'Varios',
             Num_Operacion: data.Num_Operacion || 'S/N',
             Monto: Number(data.Monto),
-            Categoria: data.Categoria || 'Otros',
+            Categoria: data.Categoria || CATEGORIA.OTROS,
         };
 
 

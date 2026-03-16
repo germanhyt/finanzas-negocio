@@ -10,7 +10,7 @@ export const GET: APIRoute = async () => {
       getPresupuestos(),
     ]);
     const resumen = calcularResumen(transacciones, presupuestos);
-    
+
     // Ejecutar verificación de alertas sin bloquear la respuesta
     void verificarYEnviarAlertas(resumen.presupuestos);
 

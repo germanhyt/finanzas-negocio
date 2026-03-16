@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { Transaccion } from '../lib/types';
+import { clasificarTransaccion } from '../lib/analytics';
 
 interface TransaccionesTableProps {
   transacciones: Transaccion[];
@@ -17,9 +18,8 @@ export function TransaccionesTable({ transacciones }: TransaccionesTableProps) {
     }).format(value);
   };
 
-  const getTipoClass = (tipo: string) => {
-    const tiposEgreso = ['PAGO_QR', 'YAPEO_CELULAR', 'PAGO_SERVICIO', 'TRANSFERENCIA'];
-    return tiposEgreso.includes(tipo.toUpperCase()) ? 'tipo-egreso' : 'tipo-ingreso';
+  const getTipoClass = (tipo: string, movimiento?: string) => {
+    return `tipo-${clasificarTransaccion(tipo, movimiento)}`;
   };
 
   const sortedData = useMemo(() => {
@@ -87,12 +87,12 @@ export function TransaccionesTable({ transacciones }: TransaccionesTableProps) {
                   </td>
                   <td className="concepto" title={t.Concepto || ''}>{t.Concepto || '-'}</td>
                   <td>
-                    <span className={`badge ${getTipoClass(t.Tipo || '')}`}>
+                    <span className={`badge ${getTipoClass(t.Tipo || '', t.Movimiento)}`}>
                       {(t.Tipo || '').replace('_', ' ')}
                     </span>
                   </td>
                   <td className="destinatario">{t.Destinatario}</td>
-                  <td className={`monto ${getTipoClass(t.Tipo || '')}`}>
+                  <td className={`monto ${getTipoClass(t.Tipo || '', t.Movimiento)}`}>
                     {formatMoney(t.Monto)}
                   </td>
                   <td className="operacion">{t.Num_Operacion}</td>

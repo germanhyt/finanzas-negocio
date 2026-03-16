@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { MOVIMIENTO, BANCO, CATEGORIA, TIPO_TRANSACCION } from '../lib/constants';
 
 interface TransactionModalProps {
   isOpen: boolean;
@@ -10,17 +11,28 @@ export function TransactionModal({ isOpen, onClose, onSuccess }: TransactionModa
   const [loading, setLoading] = useState(false);
   const [ocrLoading, setOcrLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    Fecha: string;
+    Hora: string;
+    Movimiento: string;
+    Banco: string;
+    Concepto: string;
+    Tipo: string;
+    Destinatario: string;
+    Monto: string;
+    Num_Operacion: string;
+    Categoria: string;
+  }>({
     Fecha: new Date().toISOString().split('T')[0],
     Hora: new Date().toLocaleTimeString('es-PE', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-    Movimiento: 'EGRESO',
-    Banco: 'BCP',
+    Movimiento: MOVIMIENTO.EGRESO,
+    Banco: BANCO.BCP,
     Concepto: '',
-    Tipo: 'PAGO QR',
+    Tipo: TIPO_TRANSACCION.PAGO_QR,
     Destinatario: '',
     Monto: '',
     Num_Operacion: '',
-    Categoria: 'Otros',
+    Categoria: CATEGORIA.OTROS,
   });
 
 
@@ -157,15 +169,15 @@ export function TransactionModal({ isOpen, onClose, onSuccess }: TransactionModa
           <div className="form-type-toggle">
             <button
               type="button"
-              className={`toggle-btn ingreso ${formData.Movimiento === 'INGRESO' ? 'active' : ''}`}
-              onClick={() => setFormData(prev => ({ ...prev, Movimiento: 'INGRESO' }))}
+              className={`toggle-btn ingreso ${formData.Movimiento === MOVIMIENTO.INGRESO ? 'active' : ''}`}
+              onClick={() => setFormData(prev => ({ ...prev, Movimiento: MOVIMIENTO.INGRESO }))}
             >
               INGRESO
             </button>
             <button
               type="button"
-              className={`toggle-btn egreso ${formData.Movimiento === 'EGRESO' ? 'active' : ''}`}
-              onClick={() => setFormData(prev => ({ ...prev, Movimiento: 'EGRESO' }))}
+              className={`toggle-btn egreso ${formData.Movimiento === MOVIMIENTO.EGRESO ? 'active' : ''}`}
+              onClick={() => setFormData(prev => ({ ...prev, Movimiento: MOVIMIENTO.EGRESO }))}
             >
               EGRESO
             </button>
@@ -187,26 +199,26 @@ export function TransactionModal({ isOpen, onClose, onSuccess }: TransactionModa
             <div className="form-group">
               <label>Banco</label>
               <select name="Banco" value={formData.Banco} onChange={handleChange}>
-                <option value="BCP">BCP</option>
-                <option value="BBVA">BBVA</option>
-                <option value="INTERBANK">INTERBANK</option>
-                <option value="SCOTIABANK">SCOTIABANK</option>
-                <option value="YAPE">YAPE</option>
-                <option value="PLIN">PLIN</option>
-                <option value="EFECTIVO">EFECTIVO</option>
-                <option value="OTROS">OTROS</option>
+                <option value={BANCO.BCP}>{BANCO.BCP}</option>
+                <option value={BANCO.BBVA}>{BANCO.BBVA}</option>
+                <option value={BANCO.INTERBANK}>{BANCO.INTERBANK}</option>
+                <option value={BANCO.SCOTIABANK}>{BANCO.SCOTIABANK}</option>
+                <option value={BANCO.YAPE}>{BANCO.YAPE}</option>
+                <option value={BANCO.PLIN}>{BANCO.PLIN}</option>
+                <option value={BANCO.EFECTIVO}>{BANCO.EFECTIVO}</option>
+                <option value={BANCO.OTROS}>{BANCO.OTROS}</option>
               </select>
             </div>
             <div className="form-group">
               <label>Tipo</label>
               <select name="Tipo" value={formData.Tipo} onChange={handleChange}>
-                <option value="PAGO QR">PAGO QR</option>
-                <option value="YAPEO CELULAR">YAPEO CELULAR</option>
-                <option value="TRANSFERENCIA">TRANSFERENCIA</option>
-                <option value="EFECTIVO">EFECTIVO</option>
-                <option value="COMPRA">COMPRA</option>
-                <option value="VENTA">VENTA</option>
-                <option value="OTROS">OTROS</option>
+                <option value={TIPO_TRANSACCION.PAGO_QR}>{TIPO_TRANSACCION.PAGO_QR}</option>
+                <option value={TIPO_TRANSACCION.YAPEO_CELULAR}>{TIPO_TRANSACCION.YAPEO_CELULAR}</option>
+                <option value={TIPO_TRANSACCION.TRANSFERENCIA}>{TIPO_TRANSACCION.TRANSFERENCIA}</option>
+                <option value={TIPO_TRANSACCION.EFECTIVO}>{TIPO_TRANSACCION.EFECTIVO}</option>
+                <option value={TIPO_TRANSACCION.COMPRA}>{TIPO_TRANSACCION.COMPRA}</option>
+                <option value={TIPO_TRANSACCION.VENTA}>{TIPO_TRANSACCION.VENTA}</option>
+                <option value={TIPO_TRANSACCION.OTROS}>{TIPO_TRANSACCION.OTROS}</option>
               </select>
             </div>
             <div className="form-group">
@@ -216,15 +228,15 @@ export function TransactionModal({ isOpen, onClose, onSuccess }: TransactionModa
             <div className="form-group">
               <label>Categoría</label>
               <select name="Categoria" value={formData.Categoria} onChange={handleChange}>
-                <option value="Vivienda">Vivienda</option>
-                <option value="Alimentación">Alimentación</option>
-                <option value="Transporte">Transporte</option>
-                <option value="Salud">Salud</option>
-                <option value="Servicios">Servicios</option>
-                <option value="Entretenimiento">Entretenimiento</option>
-                <option value="Educación">Educación</option>
-                <option value="Personal">Personal</option>
-                <option value="Otros">Otros</option>
+                <option value={CATEGORIA.VIVIENDA}>{CATEGORIA.VIVIENDA}</option>
+                <option value={CATEGORIA.ALIMENTACION}>{CATEGORIA.ALIMENTACION}</option>
+                <option value={CATEGORIA.TRANSPORTE}>{CATEGORIA.TRANSPORTE}</option>
+                <option value={CATEGORIA.SALUD}>{CATEGORIA.SALUD}</option>
+                <option value={CATEGORIA.SERVICIOS}>{CATEGORIA.SERVICIOS}</option>
+                <option value={CATEGORIA.ENTRETENIMIENTO}>{CATEGORIA.ENTRETENIMIENTO}</option>
+                <option value={CATEGORIA.EDUCACION}>{CATEGORIA.EDUCACION}</option>
+                <option value={CATEGORIA.PERSONAL}>{CATEGORIA.PERSONAL}</option>
+                <option value={CATEGORIA.OTROS}>{CATEGORIA.OTROS}</option>
               </select>
             </div>
 

@@ -9,12 +9,11 @@ import {
   YAxis,
 } from 'recharts';
 import type { Transaccion } from '../lib/types';
+import { clasificarTransaccion } from '../lib/analytics';
 
 interface TendenciaHoraChartProps {
   transacciones: Transaccion[];
 }
-
-const TIPOS_EGRESO = new Set(['PAGO_QR', 'YAPEO_CELULAR', 'PAGO_SERVICIO', 'TRANSFERENCIA']);
 
 function getHour(hora: string): number | null {
   const hourPart = hora?.split(':')[0];
@@ -39,9 +38,8 @@ export function TendenciaHoraChart({ transacciones }: TendenciaHoraChartProps) {
     }
 
     const monto = Number(tx.Monto || 0);
-    const tipo = tx.Tipo?.toUpperCase() ?? '';
 
-    if (TIPOS_EGRESO.has(tipo)) {
+    if (clasificarTransaccion(tx.Tipo || '', tx.Movimiento) === 'egreso') {
       chartData[hour].egresos += monto;
     } else {
       chartData[hour].ingresos += monto;
